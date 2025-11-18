@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class LoteInsumo extends Model
 {
+    use HasFactory;
+
     protected $table = 'loteinsumo';
     protected $primaryKey = 'loteinsumoid';
     public $timestamps = false;
@@ -15,27 +18,33 @@ class LoteInsumo extends Model
         'insumoid',
         'usuarioid',
         'cantidadusada',
-        'fechauso',
+        'fechauo',
         'costototal',
-        'estado',
+        'estadoloteinsumoid',
         'observaciones',
     ];
 
-    // 🔹 Relación con Lote
+    // Lote donde se aplica el insumo
     public function lote()
     {
-        return $this->belongsTo(Lote::class, 'loteid');
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Relación con Insumo
+    // Insumo usado
     public function insumo()
     {
-        return $this->belongsTo(Insumo::class, 'insumoid');
+        return $this->belongsTo(Insumo::class, 'insumoid', 'insumoid');
     }
 
-    // 🔹 Relación con Usuario (quién aplicó el insumo)
+    // Usuario que aplicó el insumo
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'usuarioid');
+        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
+    }
+
+    // Estado del insumo (aplicado, pendiente, rechazado)
+    public function estado()
+    {
+        return $this->belongsTo(EstadoLoteInsumo::class, 'estadoloteinsumoid', 'estadoloteinsumoid');
     }
 }

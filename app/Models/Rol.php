@@ -2,22 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Rol extends Model
 {
-    protected $table = 'rol'; // nombre en minúscula porque Postgres lo convierte así
+    use HasFactory;
+
+    protected $table = 'rol';
     protected $primaryKey = 'rolid';
-    public $timestamps = false; // tu tabla no tiene created_at ni updated_at
+    public $timestamps = false;
 
     protected $fillable = [
         'nombre',
         'descripcion',
     ];
 
-    // Relación: un rol puede pertenecer a muchos usuarios
+    // Relación N:N con usuarios mediante la tabla usuariorol
     public function usuarios()
     {
-        return $this->belongsToMany(Usuario::class, 'usuariorol', 'rolid', 'usuarioid');
+        return $this->belongsToMany(
+            Usuario::class,
+            'usuariorol',
+            'rolid',
+            'usuarioid',
+            'rolid',
+            'usuarioid'
+        );
     }
 }

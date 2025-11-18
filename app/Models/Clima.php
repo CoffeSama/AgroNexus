@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Clima extends Model
 {
+    use HasFactory;
+
     protected $table = 'clima';
     protected $primaryKey = 'climaid';
     public $timestamps = false;
@@ -19,9 +22,9 @@ class Clima extends Model
         'observaciones',
     ];
 
-    // 🔹 Cada registro climático pertenece a un lote
+    // Relación con Lote
     public function lote()
     {
-        return $this->belongsTo(Lote::class, 'loteid');
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
     }
 }

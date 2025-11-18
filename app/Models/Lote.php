@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Lote extends Model
 {
+    use HasFactory;
+
     protected $table = 'lote';
     protected $primaryKey = 'loteid';
     public $timestamps = false;
@@ -15,9 +18,9 @@ class Lote extends Model
         'nombre',
         'ubicacion',
         'superficie',
-        'cultivo',
+        'cultivoid',
         'fechasiembra',
-        'estadoactual',
+        'estadolotetipoid',
         'latitud',
         'longitud',
         'fechacreacion',
@@ -25,39 +28,51 @@ class Lote extends Model
         'imagenurl',
     ];
 
-    // 🔹 Un lote pertenece a un usuario (agricultor)
+    // Usuario propietario del lote
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'usuarioid');
+        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
     }
 
-    // 🔹 Un lote tiene muchos estados
+    // Cultivo asociado
+    public function cultivo()
+    {
+        return $this->belongsTo(Cultivo::class, 'cultivoid', 'cultivoid');
+    }
+
+    // Tipo de estado actual
+    public function estadoTipo()
+    {
+        return $this->belongsTo(EstadoLoteTipo::class, 'estadolotetipoid', 'estadolotetipoid');
+    }
+
+    // Historial de estados
     public function estados()
     {
-        return $this->hasMany(EstadoLote::class, 'loteid');
+        return $this->hasMany(EstadoLote::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Un lote puede tener muchas producciones
+    // Producciones registradas
     public function producciones()
     {
-        return $this->hasMany(Produccion::class, 'loteid');
+        return $this->hasMany(Produccion::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Un lote puede tener muchos insumos usados
-    public function insumos()
+    // Insumos aplicados al lote
+    public function loteInsumos()
     {
-        return $this->hasMany(LoteInsumo::class, 'loteid');
+        return $this->hasMany(LoteInsumo::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Un lote puede tener muchas actividades
+    // Actividades realizadas en el lote
     public function actividades()
     {
-        return $this->hasMany(Actividad::class, 'loteid');
+        return $this->hasMany(Actividad::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Un lote puede tener registros climáticos
-    public function climas()
+    // Registros climáticos
+    public function clima()
     {
-        return $this->hasMany(Clima::class, 'loteid');
+        return $this->hasMany(Clima::class, 'loteid', 'loteid');
     }
 }

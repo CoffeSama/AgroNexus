@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Venta extends Model
 {
+    use HasFactory;
+
     protected $table = 'venta';
     protected $primaryKey = 'ventaid';
     public $timestamps = false;
@@ -16,13 +19,13 @@ class Venta extends Model
         'cantidadkg',
         'preciokg',
         'fechaventa',
-        'total',
         'observaciones',
+        // 'total' no va en fillable porque es columna generada
     ];
 
-    // 🔹 Cada venta pertenece a una producción
+    // Producción asociada a la venta
     public function produccion()
     {
-        return $this->belongsTo(Produccion::class, 'produccionid');
+        return $this->belongsTo(Produccion::class, 'produccionid', 'produccionid');
     }
 }

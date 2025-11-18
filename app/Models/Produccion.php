@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Produccion extends Model
 {
+    use HasFactory;
+
     protected $table = 'produccion';
     protected $primaryKey = 'produccionid';
     public $timestamps = false;
@@ -14,20 +17,26 @@ class Produccion extends Model
         'loteid',
         'cantidadkg',
         'fechacosecha',
-        'destino',
+        'destinoproduccionid',
         'imagenurl',
         'observaciones',
     ];
 
-    // 🔹 Una producción pertenece a un lote
+    // Lote al que pertenece la producción
     public function lote()
     {
-        return $this->belongsTo(Lote::class, 'loteid');
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Una producción puede estar vinculada a una venta
-    public function ventas()
+    // Destino (venta, almacenamiento, consumo propio...)
+    public function destino()
     {
-        return $this->hasMany(Venta::class, 'produccionid');
+        return $this->belongsTo(DestinoProduccion::class, 'destinoproduccionid', 'destinoproduccionid');
+    }
+
+    // Relación 1:1 -> una producción puede tener una venta registrada
+    public function venta()
+    {
+        return $this->hasOne(Venta::class, 'produccionid', 'produccionid');
     }
 }

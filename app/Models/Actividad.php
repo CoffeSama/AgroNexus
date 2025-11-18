@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
+    use HasFactory;
+
     protected $table = 'actividad';
     protected $primaryKey = 'actividadid';
     public $timestamps = false;
@@ -16,20 +19,32 @@ class Actividad extends Model
         'descripcion',
         'fechainicio',
         'fechafin',
-        'tipoactividad',
-        'prioridad',
+        'tipoactividadid',
+        'prioridadid',
         'observaciones',
     ];
 
-    // 🔹 Una actividad pertenece a un lote
+    // Relación con Lote
     public function lote()
     {
-        return $this->belongsTo(Lote::class, 'loteid');
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
     }
 
-    // 🔹 Una actividad pertenece a un usuario
+    // Relación con Usuario
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'usuarioid');
+        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
+    }
+
+    // Tipo de actividad (siembra, riego, etc.)
+    public function tipoActividad()
+    {
+        return $this->belongsTo(TipoActividad::class, 'tipoactividadid', 'tipoactividadid');
+    }
+
+    // Prioridad (alta, media, baja)
+    public function prioridad()
+    {
+        return $this->belongsTo(Prioridad::class, 'prioridadid', 'prioridadid');
     }
 }
