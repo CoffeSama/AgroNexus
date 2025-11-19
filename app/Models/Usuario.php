@@ -60,4 +60,9 @@ class Usuario extends Model
     {
         return $this->hasMany(LoteInsumo::class, 'usuarioid', 'usuarioid');
     }
+
+    public function historialEstadosLote()
+    {
+        return $this->hasMany(HistorialEstadoLote::class, 'usuarioid', 'usuarioid');
+    }
 }

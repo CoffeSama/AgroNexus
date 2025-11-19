@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\CultivoController;
 use App\Http\Controllers\Api\EstadoLoteTipoController;
 use App\Http\Controllers\Api\DestinoProduccionController;
 use App\Http\Controllers\Api\EstadoLoteInsumoController;
+use App\Http\Controllers\Api\HistorialEstadoLoteController;
 
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\UsuarioController;
@@ -68,7 +69,7 @@ Route::apiResource('usuario-roles', UsuarioRolController::class);
 Route::apiResource('lotes', LoteController::class);
 Route::apiResource('estadolotes', EstadoLoteController::class);
 Route::apiResource('producciones', ProduccionController::class);
-
+Route::apiResource('historial-estados-lote', HistorialEstadoLoteController::class);
 
 // ======================================================
 //  GRUPO: INSUMOS Y APLICACIONES

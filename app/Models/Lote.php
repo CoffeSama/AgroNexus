@@ -75,4 +75,9 @@ class Lote extends Model
     {
         return $this->hasMany(Clima::class, 'loteid', 'loteid');
     }
+
+    public function historialEstados()
+    {
+        return $this->hasMany(HistorialEstadoLote::class, 'loteid', 'loteid');
+    }
 }

@@ -29,4 +29,9 @@ class EstadoLoteTipo extends Model
     {
         return $this->hasMany(EstadoLote::class, 'estadolotetipoid', 'estadolotetipoid');
     }
+
+    public function historial()
+    {
+        return $this->hasMany(HistorialEstadoLote::class, 'estadolotetipoid', 'estadolotetipoid');
+    }
 }
