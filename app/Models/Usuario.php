@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Usuario extends Model
+class Usuario extends Authenticatable
 {
-    use HasApiTokens;
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'usuario';
     protected $primaryKey = 'usuarioid';
@@ -30,6 +30,16 @@ class Usuario extends Model
         'activo',
     ];
 
+    protected $hidden = [
+        'passwordhash',
+    ];
+
+    // Laravel por defecto busca "password", así que le decimos que use "passwordhash"
+    public function getAuthPassword()
+    {
+        return $this->passwordhash;
+    }
+
     // N:N con roles
     public function roles()
     {
@@ -43,19 +53,16 @@ class Usuario extends Model
         );
     }
 
-    // Un usuario tiene muchos lotes
     public function lotes()
     {
         return $this->hasMany(Lote::class, 'usuarioid', 'usuarioid');
     }
 
-    // Un usuario tiene muchas actividades
     public function actividades()
     {
         return $this->hasMany(Actividad::class, 'usuarioid', 'usuarioid');
     }
 
-    // Un usuario registra muchos insumos aplicados al lote
     public function loteInsumos()
     {
         return $this->hasMany(LoteInsumo::class, 'usuarioid', 'usuarioid');

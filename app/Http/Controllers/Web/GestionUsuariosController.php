@@ -7,6 +7,7 @@ use App\Models\Usuario;
 use App\Models\Rol;
 use App\Models\UsuarioRol;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class GestionUsuariosController extends Controller
 {
@@ -49,6 +50,9 @@ class GestionUsuariosController extends Controller
             'rolid' => 'nullable|exists:rol,rolid'
         ]);
 
+        // Hashear password
+        $data['passwordhash'] = Hash::make($data['passwordhash']);
+
         $usuario = Usuario::create($data);
 
         if ($request->filled('rolid')) {
@@ -76,13 +80,15 @@ class GestionUsuariosController extends Controller
             'rolid' => 'nullable|exists:rol,rolid'
         ]);
 
-        if (!$request->filled('passwordhash')) {
+        // Si viene nueva contraseña, la hasheamos; si no, la quitamos del array
+        if ($request->filled('passwordhash')) {
+            $data['passwordhash'] = Hash::make($data['passwordhash']);
+        } else {
             unset($data['passwordhash']);
         }
 
         $usuario->update($data);
 
-        // actualizar rol
         if ($request->filled('rolid')) {
             UsuarioRol::updateOrCreate(
                 ['usuarioid' => $usuario->usuarioid],

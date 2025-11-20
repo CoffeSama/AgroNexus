@@ -111,11 +111,27 @@
     @stack('styles')
 </head>
 
+@php
+    $authUser = auth()->user();
+    $userFullName = $authUser
+        ? trim(($authUser->nombre ?? '') . ' ' . ($authUser->apellido ?? ''))
+        : 'Usuario';
+
+    if ($authUser && $userFullName === '') {
+        $userFullName = $authUser->nombreusuario ?? 'Usuario';
+    }
+
+    $userImagePath = $authUser && $authUser->imagenurl
+        ? $authUser->imagenurl
+        : 'images/user.png';
+
+    $userImageUrl = asset($userImagePath);
+@endphp
+
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
     {{-- NAVBAR SUPERIOR --}}
-    {{-- cambiamos a navbar-dark para que coincida con la maqueta --}}
     <nav class="main-header navbar navbar-expand navbar-dark">
         {{-- Left navbar links --}}
         <ul class="navbar-nav">
@@ -161,26 +177,26 @@
             {{-- Usuario actual (dropdown) --}}
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-                    <img src="https://w7.pngwing.com/pngs/312/283/png-transparent-man-s-face-avatar-computer-icons-user-profile-business-user-avatar-blue-face-heroes-thumbnail.png"
+                    <img src="{{ $userImageUrl }}"
                          class="user-image img-circle elevation-2" alt="User Image">
                     <span class="d-none d-md-inline">
                         @auth
-                            {{ auth()->user()->name }}
+                            {{ $userFullName }}
                         @else
-                            Admin Usuario
+                            Invitado
                         @endauth
                     </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     {{-- User image --}}
                     <li class="user-header bg-primary">
-                        <img src="https://w7.pngwing.com/pngs/312/283/png-transparent-man-s-face-avatar-computer-icons-user-profile-business-user-avatar-blue-face-heroes-thumbnail.png"
+                        <img src="{{ $userImageUrl }}"
                              class="img-circle elevation-2" alt="User Image">
                         <p>
                             @auth
-                                {{ auth()->user()->name }}
+                                {{ $userFullName }}
                             @else
-                                Admin Usuario
+                                Invitado
                             @endauth
                             <small>AgroNexus · Panel Administrativo</small>
                         </p>
@@ -189,7 +205,10 @@
                     {{-- Menu Footer--}}
                     <li class="user-footer">
                         <a href="#" class="btn btn-default btn-flat">Perfil</a>
-                        <a href="#" class="btn btn-default btn-flat float-right">Salir</a>
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline float-right">
+                            @csrf
+                            <button type="submit" class="btn btn-default btn-flat">Salir</button>
+                        </form>
                     </li>
                 </ul>
             </li>
@@ -200,15 +219,15 @@
     {{-- SIDEBAR --}}
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
-{{-- Brand Logo --}}
-<a href="{{ url('/') }}" class="brand-link">
-    {{-- Imagen local desde public/images/ --}}
-    <img src="{{ asset('images/logo.png') }}"
-         alt="AgroNexus Logo"
-         class="brand-image img-circle elevation-3"
-         style="opacity:.9">
-    <span class="brand-text font-weight-light">AgroNexus</span>
-</a>
+        {{-- Brand Logo --}}
+        <a href="{{ url('/') }}"
+           class="brand-link">
+            <img src="{{ asset('images/logo.png') }}"
+                 alt="AgroNexus Logo"
+                 class="brand-image img-circle elevation-3"
+                 style="opacity:.9">
+            <span class="brand-text font-weight-light">AgroNexus</span>
+        </a>
 
         {{-- Sidebar --}}
         <div class="sidebar">
@@ -216,15 +235,15 @@
             {{-- Panel de usuario --}}
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
-                    <img src="https://w7.pngwing.com/pngs/312/283/png-transparent-man-s-face-avatar-computer-icons-user-profile-business-user-avatar-blue-face-heroes-thumbnail.png"
+                    <img src="{{ $userImageUrl }}"
                          class="img-circle elevation-2" alt="User Image">
                 </div>
                 <div class="info">
                     <a href="#" class="d-block">
                         @auth
-                            {{ auth()->user()->name }}
+                            {{ $userFullName }}
                         @else
-                            Admin Usuario
+                            Invitado
                         @endauth
                     </a>
                     <span class="text-xs text-muted">Administrador</span>
@@ -436,9 +455,11 @@
                             </li>
                         </ul>
                     </li>
+
+                    {{-- GESTIÓN DE USUARIOS --}}
                     <li class="nav-item {{ request()->routeIs('gestion.*') ? 'menu-open' : '' }}">
                         <a href="{{ route('gestion.index') }}"
-                        class="nav-link {{ request()->routeIs('gestion.*') ? 'active' : '' }}">
+                           class="nav-link {{ request()->routeIs('gestion.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
                             <p>Gestión de Usuarios</p>
                         </a>
