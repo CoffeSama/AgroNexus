@@ -436,43 +436,13 @@
                             </li>
                         </ul>
                     </li>
-
-                    {{-- ADMINISTRACIÓN (DESPLEGABLE) --}}
-                    <li class="nav-item
-                        {{ request()->routeIs('usuarios.*','usuario-roles.*','roles.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link
-                            {{ request()->routeIs('usuarios.*','usuario-roles.*','roles.*') ? 'active' : '' }}">
+                    <li class="nav-item {{ request()->routeIs('gestion.*') ? 'menu-open' : '' }}">
+                        <a href="{{ route('gestion.index') }}"
+                        class="nav-link {{ request()->routeIs('gestion.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
-                            <p>
-                                Usuarios
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
+                            <p>Gestión de Usuarios</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('usuarios.index') }}"
-                                   class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Gestión de Usuarios</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('usuario-roles.index') }}"
-                                   class="nav-link {{ request()->routeIs('usuario-roles.*') ? 'active' : '' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Usuarios & Roles</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('roles.index') }}"
-                                   class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Roles</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-
                 </ul>
             </nav>
         </div>
