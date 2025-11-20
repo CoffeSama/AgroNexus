@@ -35,72 +35,54 @@ use App\Http\Controllers\Api\VentaController;
 
 use App\Http\Controllers\Api\AuthController;
 
-// ======================================================
-//  ENDPOINT DE PRUEBA
-// ======================================================
-Route::get('/test-api', function () {
-    return response()->json(['ok' => true]);
-});
+Route::name('api.')->group(function () {
 
-// ======================================================
-//  GRUPO: CATÁLOGOS
-// ======================================================
-Route::apiResource('tipoactividades', TipoActividadController::class);
-Route::apiResource('prioridades', PrioridadController::class);
-Route::apiResource('tipoinsumos', TipoInsumoController::class);
-Route::apiResource('unidadesmedida', UnidadMedidaController::class);
-Route::apiResource('cultivos', CultivoController::class);
-Route::apiResource('estadolote-tipos', EstadoLoteTipoController::class);
-Route::apiResource('destinoproducciones', DestinoProduccionController::class);
-Route::apiResource('estadolote-insumos', EstadoLoteInsumoController::class);
+    // ENDPOINT DE PRUEBA
+    Route::get('/test-api', function () {
+        return response()->json(['ok' => true]);
+    });
 
+    // GRUPO: CATÁLOGOS
+    Route::apiResource('tipoactividades', TipoActividadController::class);
+    Route::apiResource('prioridades', PrioridadController::class);
+    Route::apiResource('tipoinsumos', TipoInsumoController::class);
+    Route::apiResource('unidadesmedida', UnidadMedidaController::class);
+    Route::apiResource('cultivos', CultivoController::class);
+    Route::apiResource('estadolote-tipos', EstadoLoteTipoController::class);
+    Route::apiResource('destinoproducciones', DestinoProduccionController::class);
+    Route::apiResource('estadolote-insumos', EstadoLoteInsumoController::class);
 
-// ======================================================
-//  GRUPO: USUARIOS Y ROLES
-// ======================================================
-Route::apiResource('roles', RolController::class);
-Route::apiResource('usuarios', UsuarioController::class);
-Route::apiResource('usuario-roles', UsuarioRolController::class);
+    // GRUPO: USUARIOS Y ROLES
+    Route::apiResource('roles', RolController::class);
+    Route::apiResource('usuarios', UsuarioController::class);
+    Route::apiResource('usuario-roles', UsuarioRolController::class);
 
+    // GRUPO: LOTES Y PRODUCCIÓN
+    Route::apiResource('lotes', LoteController::class);
+    Route::apiResource('estadolotes', EstadoLoteController::class);
+    Route::apiResource('producciones', ProduccionController::class);
+    Route::apiResource('historial-estados-lote', HistorialEstadoLoteController::class);
 
-// ======================================================
-//  GRUPO: LOTES Y PRODUCCIÓN
-// ======================================================
-Route::apiResource('lotes', LoteController::class);
-Route::apiResource('estadolotes', EstadoLoteController::class);
-Route::apiResource('producciones', ProduccionController::class);
-Route::apiResource('historial-estados-lote', HistorialEstadoLoteController::class);
+    // GRUPO: INSUMOS Y APLICACIONES
+    Route::apiResource('insumos', InsumoController::class);
+    Route::apiResource('lote-insumos', LoteInsumoController::class);
 
-// ======================================================
-//  GRUPO: INSUMOS Y APLICACIONES
-// ======================================================
-Route::apiResource('insumos', InsumoController::class);
-Route::apiResource('lote-insumos', LoteInsumoController::class);
+    // ACTIVIDADES
+    Route::apiResource('actividades', ActividadController::class);
 
+    // CLIMA
+    Route::apiResource('climas', ClimaController::class);
 
-// ======================================================
-//  GRUPO: ACTIVIDADES
-// ======================================================
-Route::apiResource('actividades', ActividadController::class);
+    // VENTAS
+    Route::apiResource('ventas', VentaController::class);
 
+    // AUTH
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/login',    [AuthController::class, 'login'])->name('login');
 
-// ======================================================
-//  GRUPO: CLIMA
-// ======================================================
-Route::apiResource('climas', ClimaController::class);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me',     [AuthController::class, 'me'])->name('me');
+        Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
+    });
 
-
-// ======================================================
-//  GRUPO: VENTAS
-// ======================================================
-Route::apiResource('ventas', VentaController::class);
-
-// Registro y login (no requieren token)
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login',    [AuthController::class, 'login']);
-
-// Rutas protegidas (requieren token)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me',     [AuthController::class, 'me']);
-    Route::post('/logout',[AuthController::class, 'logout']);
 });
