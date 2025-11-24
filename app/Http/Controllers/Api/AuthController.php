@@ -10,45 +10,95 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
     /**
-     * REGISTRO - crea usuario y devuelve token + datos
+     * =====================================================
+     *  REGISTER (MÓVIL) — Rol = Agricultor
+     * =====================================================
      */
     public function register(Request $request)
     {
         $data = $request->validate([
-            'nombre'           => 'required|string|max:100',
-            'apellido'         => 'required|string|max:100',
-            'email'            => 'required|email|max:100|unique:usuario,email',
-            'nombreusuario'    => 'required|string|max:100|unique:usuario,nombreusuario',
-            'telefono'         => 'nullable|string|max:20',
-            'password'         => 'required|string|min:6',
-            'imagenurl'        => 'nullable|string|max:250',
+            'nombre'               => 'required|string|max:100',
+            'apellido'             => 'required|string|max:100',
+            'email'                => 'required|email|max:100|unique:usuario,email',
+            'nombreusuario'        => 'required|string|max:100|unique:usuario,nombreusuario',
+            'telefono'             => 'nullable|string|max:20',
+            'password'             => 'required|string|min:6',
+            'imagenurl'            => 'nullable|string|max:250',
             'informacionadicional' => 'nullable|string',
         ]);
 
         $usuario = new Usuario();
-        $usuario->nombre               = $data['nombre'];
-        $usuario->apellido             = $data['apellido'];
-        $usuario->email                = $data['email'];
-        $usuario->nombreusuario        = $data['nombreusuario'];
-        $usuario->telefono             = $data['telefono'] ?? null;
-        $usuario->passwordhash         = Hash::make($data['password']);
-        $usuario->imagenurl            = $data['imagenurl'] ?? null;
-        $usuario->informacionadicional = $data['informacionadicional'] ?? null;
+        $usuario->nombre        = $data['nombre'];
+        $usuario->apellido      = $data['apellido'];
+        $usuario->email         = $data['email'];
+        $usuario->nombreusuario = $data['nombreusuario'];
+        $usuario->telefono      = $data['telefono'] ?? null;
+        $usuario->passwordhash  = Hash::make($data['password']);
+
+        // URL por defecto si no viene imagenurl
+        $usuario->imagenurl = $request->input('imagenurl')
+            ?: 'https://bsmobatqfjmrfiipkimu.supabase.co/storage/v1/object/public/agronexus-bucket/usuarios/userDefault.png';
+
+        $usuario->informacionadicional = $request->input('informacionadicional');
         $usuario->activo               = true;
 
         $usuario->save();
 
-        // Token para usar inmediatamente
+        // 👇 Rol Agricultor (ID = 2)
+        $usuario->roles()->attach(2);
+
         $token = $usuario->createToken('mobile')->plainTextToken;
 
         return response()->json([
-            'user'  => $usuario,
+            'user'  => $usuario->load('roles'),
             'token' => $token,
         ], 201);
     }
 
+
+
     /**
-     * LOGIN - Devuelve token + datos del usuario
+     * =====================================================
+     *  REGISTER ADMIN (WEB) — Rol = Administrador
+     *  Solo debería usarse desde el panel web protegido.
+     * =====================================================
+     */
+    public function registerAdmin(Request $request)
+    {
+        $data = $request->validate([
+            'nombre'               => 'required|string|max:100',
+            'apellido'             => 'required|string|max:100',
+            'email'                => 'required|email|max:100|unique:usuario,email',
+            'nombreusuario'        => 'required|string|max:100|unique:usuario,nombreusuario',
+            'telefono'             => 'nullable|string|max:20',
+            'password'             => 'required|string|min:6',
+            'imagenurl'            => 'nullable|string|max:250',
+            'informacionadicional' => 'nullable|string',
+        ]);
+
+        $usuario = new Usuario();
+        $usuario->nombre        = $data['nombre'];
+        $usuario->apellido      = $data['apellido'];
+        $usuario->email         = $data['email'];
+        $usuario->nombreusuario = $data['nombreusuario'];
+        $usuario->telefono      = $data['telefono'] ?? null;
+        $usuario->passwordhash  = Hash::make($data['password']);
+        $usuario->imagenurl     = $request->input('imagenurl');
+        $usuario->informacionadicional = $request->input('informacionadicional');
+        $usuario->activo        = true;
+
+        $usuario->save();
+
+        // 👇 Rol Administrador (ID = 1)
+        $usuario->roles()->attach(1);
+
+        return response()->json([
+            'message' => 'Administrador creado correctamente',
+            'user'    => $usuario->load('roles')
+        ], 201);
+    }
+    /**
+     * LOGIN
      */
     public function login(Request $request)
     {
@@ -68,21 +118,23 @@ class AuthController extends Controller
         $token = $usuario->createToken('mobile')->plainTextToken;
 
         return response()->json([
-            'user'  => $usuario,
+            'user'  => $usuario->load('roles'),
             'token' => $token
         ]);
     }
 
+
     /**
-     * Usuario autenticado (requiere token)
+     * ME - Usuario autenticado
      */
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($request->user()->load('roles'));
     }
 
+
     /**
-     * LOGOUT - revoca el token actual
+     * LOGOUT
      */
     public function logout(Request $request)
     {

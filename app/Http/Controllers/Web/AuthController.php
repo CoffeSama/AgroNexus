@@ -68,7 +68,7 @@ class AuthController extends Controller
             'nombreusuario' => $data['nombreusuario'],
             'telefono'      => $data['telefono'] ?? null,
             'passwordhash'  => Hash::make($data['password']),
-            'imagenurl'     => 'images/user.png',   // ✔ asignar imagen por defecto
+            'imagenurl'     => 'https://bsmobatqfjmrfiipkimu.supabase.co/storage/v1/object/public/agronexus-bucket/usuarios/userDefault.png',
             'activo'        => true,
             'fecharegistro' => now(),
         ]);

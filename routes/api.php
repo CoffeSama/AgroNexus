@@ -78,6 +78,7 @@ Route::name('api.')->group(function () {
 
     // AUTH
     Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
     Route::post('/login',    [AuthController::class, 'login'])->name('login');
 
     Route::middleware('auth:sanctum')->group(function () {
