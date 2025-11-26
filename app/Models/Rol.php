@@ -18,6 +18,10 @@ class Rol extends Model
         'descripcion',
     ];
 
+    protected $hidden = [
+        'usuarios',
+    ];
+
     // Relación N:N con usuarios mediante la tabla usuariorol
     public function usuarios()
     {

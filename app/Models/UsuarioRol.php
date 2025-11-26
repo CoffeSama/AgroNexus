@@ -18,13 +18,17 @@ class UsuarioRol extends Model
         'rolid',
     ];
 
-    public function usuario()
-    {
-        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
-    }
+    protected $casts = [
+        'usuariorolid' => 'integer',
+        'usuarioid'    => 'integer',
+        'rolid'        => 'integer',
+    ];
 
-    public function rol()
-    {
-        return $this->belongsTo(Rol::class, 'rolid', 'rolid');
-    }
+    protected $hidden = [
+        'usuario',
+        'rol',
+    ];
+
+    public function usuario(){ return $this->belongsTo(Usuario::class,'usuarioid','usuarioid'); }
+    public function rol(){ return $this->belongsTo(Rol::class,'rolid','rolid'); }
 }

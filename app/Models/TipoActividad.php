@@ -18,6 +18,10 @@ class TipoActividad extends Model
         'descripcion',
     ];
 
+    protected $hidden = [
+        'actividades',
+    ];
+
     // Relaciones
     public function actividades()
     {

@@ -24,27 +24,26 @@ class LoteInsumo extends Model
         'observaciones',
     ];
 
-    // Lote donde se aplica el insumo
-    public function lote()
-    {
-        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
-    }
+    protected $casts = [
+        'loteinsumoid'      => 'integer',
+        'loteid'            => 'integer',
+        'insumoid'          => 'integer',
+        'usuarioid'         => 'integer',
+        'cantidadusada'     => 'float',
+        'costototal'        => 'float',
+        'estadoloteinsumoid'=> 'integer',
+        'fechauo'           => 'datetime',
+    ];
 
-    // Insumo usado
-    public function insumo()
-    {
-        return $this->belongsTo(Insumo::class, 'insumoid', 'insumoid');
-    }
+    protected $hidden = [
+        'lote',
+        'insumo',
+        'usuario',
+        'estado',
+    ];
 
-    // Usuario que aplicó el insumo
-    public function usuario()
-    {
-        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
-    }
-
-    // Estado del insumo (aplicado, pendiente, rechazado)
-    public function estado()
-    {
-        return $this->belongsTo(EstadoLoteInsumo::class, 'estadoloteinsumoid', 'estadoloteinsumoid');
-    }
+    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
+    public function insumo(){ return $this->belongsTo(Insumo::class,'insumoid','insumoid'); }
+    public function usuario(){ return $this->belongsTo(Usuario::class,'usuarioid','usuarioid'); }
+    public function estado(){ return $this->belongsTo(EstadoLoteInsumo::class,'estadoloteinsumoid','estadoloteinsumoid'); }
 }

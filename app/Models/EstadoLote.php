@@ -21,15 +21,18 @@ class EstadoLote extends Model
         'imagenurl',
     ];
 
-    // Lote al que pertenece este registro de estado
-    public function lote()
-    {
-        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
-    }
+    protected $casts = [
+        'estadoid'        => 'integer',
+        'loteid'          => 'integer',
+        'estadolotetipoid'=> 'integer',
+        'fecharegistro'   => 'datetime',
+    ];
+    
+    protected $hidden = [
+        'lote',
+        'estadoTipo',
+    ];
 
-    // Tipo de estado aplicado
-    public function estadoTipo()
-    {
-        return $this->belongsTo(EstadoLoteTipo::class, 'estadolotetipoid', 'estadolotetipoid');
-    }
+    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
+    public function estadoTipo(){ return $this->belongsTo(EstadoLoteTipo::class,'estadolotetipoid','estadolotetipoid'); }
 }

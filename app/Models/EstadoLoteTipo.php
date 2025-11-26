@@ -17,6 +17,12 @@ class EstadoLoteTipo extends Model
         'nombre',
         'descripcion',
     ];
+    
+    protected $hidden = [
+        'lotes',
+        'estadosLote',
+        'historial',
+    ];
 
     // Lotes asociados a este tipo de estado
     public function lotes()

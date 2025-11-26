@@ -32,44 +32,26 @@ class Usuario extends Authenticatable
 
     protected $hidden = [
         'passwordhash',
+        'roles',
+        'lotes',
+        'actividades',
+        'loteInsumos',
+        'historialEstadosLote',
     ];
 
-    // Laravel por defecto busca "password", así que le decimos que use "passwordhash"
-    public function getAuthPassword()
-    {
-        return $this->passwordhash;
-    }
+    protected $casts = [
+        'usuarioid'        => 'integer',
+        'activo'           => 'boolean',
+        'fecharegistro'    => 'datetime',
+        'fechamodificacion'=> 'datetime',
+        'ultimologin'      => 'datetime',
+    ];
 
-    // N:N con roles
-    public function roles()
-    {
-        return $this->belongsToMany(
-            Rol::class,
-            'usuariorol',
-            'usuarioid',
-            'rolid',
-            'usuarioid',
-            'rolid'
-        );
-    }
+    public function getAuthPassword(){ return $this->passwordhash; }
 
-    public function lotes()
-    {
-        return $this->hasMany(Lote::class, 'usuarioid', 'usuarioid');
-    }
-
-    public function actividades()
-    {
-        return $this->hasMany(Actividad::class, 'usuarioid', 'usuarioid');
-    }
-
-    public function loteInsumos()
-    {
-        return $this->hasMany(LoteInsumo::class, 'usuarioid', 'usuarioid');
-    }
-
-    public function historialEstadosLote()
-    {
-        return $this->hasMany(HistorialEstadoLote::class, 'usuarioid', 'usuarioid');
-    }
+    public function roles(){ return $this->belongsToMany(Rol::class,'usuariorol','usuarioid','rolid'); }
+    public function lotes(){ return $this->hasMany(Lote::class,'usuarioid','usuarioid'); }
+    public function actividades(){ return $this->hasMany(Actividad::class,'usuarioid','usuarioid'); }
+    public function loteInsumos(){ return $this->hasMany(LoteInsumo::class,'usuarioid','usuarioid'); }
+    public function historialEstadosLote(){ return $this->hasMany(HistorialEstadoLote::class,'usuarioid','usuarioid'); }
 }

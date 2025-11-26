@@ -22,21 +22,21 @@ class Produccion extends Model
         'observaciones',
     ];
 
-    // Lote al que pertenece la producción
-    public function lote()
-    {
-        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
-    }
+    protected $casts = [
+        'produccionid'      => 'integer',
+        'loteid'            => 'integer',
+        'cantidadkg'        => 'float',
+        'destinoproduccionid'=> 'integer',
+        'fechacosecha'      => 'date',
+    ];
 
-    // Destino (venta, almacenamiento, consumo propio...)
-    public function destino()
-    {
-        return $this->belongsTo(DestinoProduccion::class, 'destinoproduccionid', 'destinoproduccionid');
-    }
+    protected $hidden = [
+        'lote',
+        'destino',
+        'venta',
+    ];
 
-    // Relación 1:1 -> una producción puede tener una venta registrada
-    public function venta()
-    {
-        return $this->hasOne(Venta::class, 'produccionid', 'produccionid');
-    }
+    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
+    public function destino(){ return $this->belongsTo(DestinoProduccion::class,'destinoproduccionid','destinoproduccionid'); }
+    public function venta(){ return $this->hasOne(Venta::class,'produccionid','produccionid'); }
 }

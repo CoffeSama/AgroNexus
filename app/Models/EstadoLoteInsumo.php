@@ -17,6 +17,10 @@ class EstadoLoteInsumo extends Model
         'nombre',
     ];
 
+    protected $hidden = [
+        'loteInsumos',
+    ];
+
     // Registros de insumos aplicados al lote
     public function loteInsumos()
     {

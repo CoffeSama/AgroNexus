@@ -24,27 +24,25 @@ class Actividad extends Model
         'observaciones',
     ];
 
-    // Relación con Lote
-    public function lote()
-    {
-        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
-    }
+    protected $casts = [
+        'actividadid'     => 'integer',
+        'loteid'          => 'integer',
+        'usuarioid'       => 'integer',
+        'tipoactividadid' => 'integer',
+        'prioridadid'     => 'integer',
+        'fechainicio'     => 'datetime',
+        'fechafin'        => 'datetime',
+    ];
 
-    // Relación con Usuario
-    public function usuario()
-    {
-        return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
-    }
+    protected $hidden = [
+        'lote',
+        'usuario',
+        'tipoActividad',
+        'prioridad',
+    ];
 
-    // Tipo de actividad (siembra, riego, etc.)
-    public function tipoActividad()
-    {
-        return $this->belongsTo(TipoActividad::class, 'tipoactividadid', 'tipoactividadid');
-    }
-
-    // Prioridad (alta, media, baja)
-    public function prioridad()
-    {
-        return $this->belongsTo(Prioridad::class, 'prioridadid', 'prioridadid');
-    }
+    public function lote()       { return $this->belongsTo(Lote::class,'loteid','loteid'); }
+    public function usuario()    { return $this->belongsTo(Usuario::class,'usuarioid','usuarioid'); }
+    public function tipoActividad(){return $this->belongsTo(TipoActividad::class,'tipoactividadid','tipoactividadid');}
+    public function prioridad()  { return $this->belongsTo(Prioridad::class,'prioridadid','prioridadid'); }
 }

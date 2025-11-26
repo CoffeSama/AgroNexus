@@ -12,7 +12,7 @@ class HistorialEstadoLote extends Model
     protected $table = 'historial_estados_lote';
     protected $primaryKey = 'historial_estado_id';
 
-    // Tiene created_at y updated_at, así que dejamos timestamps activos
+    // Tiene created_at y updated_at
     public $timestamps = true;
 
     protected $fillable = [
@@ -22,6 +22,22 @@ class HistorialEstadoLote extends Model
         'observaciones',
         'imagenurl',
         'usuarioid',
+    ];
+
+    protected $casts = [
+        'historial_estado_id' => 'integer',
+        'loteid'              => 'integer',
+        'estadolotetipoid'    => 'integer',
+        'usuarioid'           => 'integer',
+        'fecha_cambio'        => 'datetime',
+        'created_at'          => 'datetime',
+        'updated_at'          => 'datetime',
+    ];
+
+    protected $hidden = [
+        'lote',
+        'estadoTipo',
+        'usuario',
     ];
 
     public function lote()

@@ -22,9 +22,18 @@ class Clima extends Model
         'observaciones',
     ];
 
-    // Relación con Lote
-    public function lote()
-    {
-        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
-    }
+    protected $casts = [
+        'climaid'     => 'integer',
+        'loteid'      => 'integer',
+        'temperatura' => 'float',
+        'humedad'     => 'float',
+        'lluvia'      => 'float',
+        'fecha'       => 'datetime',
+    ];
+
+    protected $hidden = [
+        'lote',
+    ];
+
+    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
 }

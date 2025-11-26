@@ -17,6 +17,10 @@ class Prioridad extends Model
         'nombre',
     ];
 
+    protected $hidden = [
+        'actividades',
+    ];
+
     // Relaciones
     public function actividades()
     {

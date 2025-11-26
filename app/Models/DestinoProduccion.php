@@ -17,6 +17,10 @@ class DestinoProduccion extends Model
         'nombre',
     ];
 
+    protected $hidden = [
+        'producciones',
+    ];
+
     // Producciones con este destino
     public function producciones()
     {

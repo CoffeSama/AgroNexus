@@ -28,49 +28,66 @@ class Lote extends Model
         'imagenurl',
     ];
 
-    // Usuario propietario del lote
+    protected $casts = [
+        'loteid'           => 'integer',
+        'usuarioid'        => 'integer',
+        'superficie'       => 'float',
+        'cultivoid'        => 'integer',
+        'estadolotetipoid' => 'integer',
+        'latitud'          => 'float',
+        'longitud'         => 'float',
+        'fechasiembra'     => 'date',
+        'fechacreacion'    => 'datetime',
+        'fechamodificacion'=> 'datetime',
+    ];
+
+    protected $hidden = [
+        'usuario',
+        'cultivo',
+        'estadoTipo',
+        'estados',
+        'producciones',
+        'loteInsumos',
+        'actividades',
+        'clima',
+        'historialEstados',
+    ];
+
     public function usuario()
     {
         return $this->belongsTo(Usuario::class, 'usuarioid', 'usuarioid');
     }
 
-    // Cultivo asociado
     public function cultivo()
     {
         return $this->belongsTo(Cultivo::class, 'cultivoid', 'cultivoid');
     }
 
-    // Tipo de estado actual
     public function estadoTipo()
     {
         return $this->belongsTo(EstadoLoteTipo::class, 'estadolotetipoid', 'estadolotetipoid');
     }
 
-    // Historial de estados
     public function estados()
     {
         return $this->hasMany(EstadoLote::class, 'loteid', 'loteid');
     }
 
-    // Producciones registradas
     public function producciones()
     {
         return $this->hasMany(Produccion::class, 'loteid', 'loteid');
     }
 
-    // Insumos aplicados al lote
     public function loteInsumos()
     {
         return $this->hasMany(LoteInsumo::class, 'loteid', 'loteid');
     }
 
-    // Actividades realizadas en el lote
     public function actividades()
     {
         return $this->hasMany(Actividad::class, 'loteid', 'loteid');
     }
 
-    // Registros climáticos
     public function clima()
     {
         return $this->hasMany(Clima::class, 'loteid', 'loteid');

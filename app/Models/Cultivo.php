@@ -17,6 +17,10 @@ class Cultivo extends Model
         'nombre',
     ];
 
+    protected $hidden = [
+        'lotes',
+    ];
+
     // Relaciones
     public function lotes()
     {

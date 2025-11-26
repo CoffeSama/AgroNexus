@@ -20,12 +20,21 @@ class Venta extends Model
         'preciokg',
         'fechaventa',
         'observaciones',
-        // 'total' no va en fillable porque es columna generada
+        // 'total' si existe en DB se calcula y se castea
     ];
 
-    // Producción asociada a la venta
-    public function produccion()
-    {
-        return $this->belongsTo(Produccion::class, 'produccionid', 'produccionid');
-    }
+    protected $casts = [
+        'ventaid'       => 'integer',
+        'produccionid'  => 'integer',
+        'cantidadkg'    => 'float',
+        'preciokg'      => 'float',
+        'total'         => 'float',   // se mantiene aunque sea columna generada
+        'fechaventa'    => 'datetime',
+    ];
+
+    protected $hidden = [
+        'produccion',
+    ];
+
+    public function produccion(){ return $this->belongsTo(Produccion::class,'produccionid','produccionid'); }
 }

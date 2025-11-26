@@ -17,6 +17,10 @@ class UnidadMedida extends Model
         'nombre',
     ];
 
+    protected $hidden = [
+        'insumos',
+    ];
+
     // Relaciones
     public function insumos()
     {

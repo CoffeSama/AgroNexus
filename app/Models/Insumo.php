@@ -24,19 +24,31 @@ class Insumo extends Model
         'descripcion',
     ];
 
-    // Tipo de insumo (fertilizante, pesticida, etc.)
+    protected $casts = [
+        'insumoid'       => 'integer',
+        'tipoinsumoid'   => 'integer',
+        'unidadmedidaid' => 'integer',
+        'stock'          => 'float',
+        'stockminimo'    => 'float',
+        'preciounitario' => 'float',
+    ];
+
+    protected $hidden = [
+        'tipo',
+        'unidadMedida',
+        'loteInsumos',
+    ];
+
     public function tipo()
     {
         return $this->belongsTo(TipoInsumo::class, 'tipoinsumoid', 'tipoinsumoid');
     }
 
-    // Unidad de medida (kg, litros, unidades)
     public function unidadMedida()
     {
         return $this->belongsTo(UnidadMedida::class, 'unidadmedidaid', 'unidadmedidaid');
     }
 
-    // Aplicaciones de este insumo en los lotes
     public function loteInsumos()
     {
         return $this->hasMany(LoteInsumo::class, 'insumoid', 'insumoid');
