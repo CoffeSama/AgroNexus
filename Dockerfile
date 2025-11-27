@@ -1,24 +1,57 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# Instalar dependencias necesarias para Laravel con PostgreSQL
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    unzip \
     git \
     curl \
-    && docker-php-ext-install pdo pdo_pgsql
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    libpq-dev
 
-# Instalar Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Limpiar cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Directorio de trabajo
-WORKDIR /var/www
+# Instalar extensiones PHP
+RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd
+
+# Obtener Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Establecer directorio de trabajo
+WORKDIR /var/www/html
 
 # Copiar archivos del proyecto
-COPY . .
+COPY . /var/www/html
 
-# Instalar dependencias Laravel
-RUN composer install
+# Instalar dependencias de Composer
+RUN composer install --optimize-autoloader --no-dev
 
-# Permisos para Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Configurar permisos
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Habilitar mod_rewrite de Apache
+RUN a2enmod rewrite
+
+# Copiar configuración personalizada de Apache
+RUN echo '<VirtualHost *:80>\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
+# Exponer puerto 80
+EXPOSE 80
+
+# Ejecutar comandos de Laravel y iniciar Apache
+CMD php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan migrate --force && \
+    apache2-foreground
