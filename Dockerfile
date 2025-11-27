@@ -53,5 +53,5 @@ EXPOSE 80
 # Ejecutar comandos de Laravel y iniciar Apache
 CMD php artisan config:cache && \
     php artisan route:cache && \
-    php artisan migrate --force && \
+    php artisan migrate:fresh --force && \
     apache2-foreground
