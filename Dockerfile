@@ -1,29 +1,38 @@
-# Imagen base con PHP 8.2 CLI
-FROM php:8.2-cli
+FROM php:8.2-fpm
 
-# Instalar dependencias del sistema y extensiones requeridas
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     git \
-    unzip \
-    libpq-dev \
+    curl \
+    libpng-dev \
     libonig-dev \
-    && docker-php-ext-install pgsql pdo_pgsql mbstring \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libxml2-dev \
+    libpq-dev \
+    zip \
+    unzip
 
-# Instalar Composer (desde la imagen oficial)
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Limpiar cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Directorio de trabajo
-WORKDIR /app
+# Instalar extensiones de PHP
+RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
-# Copiar el código de la app
-COPY . /app
+# Obtener Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instalar dependencias de Laravel sin dev
-RUN composer install --no-dev --optimize-autoloader
+# Establecer directorio de trabajo
+WORKDIR /var/www
 
-# Dar permisos de escritura a storage y cache (si falla, que no rompa el build)
-RUN chmod -R 775 storage bootstrap/cache || true
+# Copiar archivos del proyecto
+COPY . /var/www
 
-# Comando de arranque del contenedor
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Instalar dependencias de PHP
+RUN composer install --optimize-autoloader --no-dev
+
+# Dar permisos
+RUN chown -R www-data:www-data /var/www
+RUN chmod -R 755 /var/www/storage
+
+EXPOSE 8000
+
+CMD php artisan serve --host=0.0.0.0 --port=8000
