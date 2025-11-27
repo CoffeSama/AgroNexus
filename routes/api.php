@@ -2,12 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// ======================================================
-//  API DE AGRONEXUS - RUTAS REST COMPLETAS
-//  Todas devuelven JSON y usan controladores en Api/
-// ======================================================
-
-// IMPORTACIÓN DE CONTROLADORES -------------------------
 use App\Http\Controllers\Api\TipoActividadController;
 use App\Http\Controllers\Api\PrioridadController;
 use App\Http\Controllers\Api\TipoInsumoController;
@@ -34,26 +28,6 @@ use App\Http\Controllers\Api\ClimaController;
 use App\Http\Controllers\Api\VentaController;
 
 use App\Http\Controllers\Api\AuthController;
-
-// ======================================================
-//  HEALTH CHECK - REQUERIDO POR RENDER
-// ======================================================
-Route::get('/health', function () {
-    try {
-        // Intentar conexión a base de datos
-        DB::connection()->getPdo();
-        $dbStatus = 'connected';
-    } catch (\Exception $e) {
-        $dbStatus = 'error: ' . $e->getMessage();
-    }
-    
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => now()->toDateTimeString(),
-        'database' => $dbStatus,
-        'app' => config('app.name')
-    ], 200);
-});
 
 Route::name('api.')->group(function () {
 
