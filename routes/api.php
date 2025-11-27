@@ -35,6 +35,26 @@ use App\Http\Controllers\Api\VentaController;
 
 use App\Http\Controllers\Api\AuthController;
 
+// ======================================================
+//  HEALTH CHECK - REQUERIDO POR RENDER
+// ======================================================
+Route::get('/health', function () {
+    try {
+        // Intentar conexión a base de datos
+        DB::connection()->getPdo();
+        $dbStatus = 'connected';
+    } catch (\Exception $e) {
+        $dbStatus = 'error: ' . $e->getMessage();
+    }
+    
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toDateTimeString(),
+        'database' => $dbStatus,
+        'app' => config('app.name')
+    ], 200);
+});
+
 Route::name('api.')->group(function () {
 
     // ENDPOINT DE PRUEBA
@@ -85,12 +105,4 @@ Route::name('api.')->group(function () {
         Route::get('/me',     [AuthController::class, 'me'])->name('me');
         Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
     });
-
-    Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => now(),
-        'database' => DB::connection()->getPdo() ? 'connected' : 'disconnected'
-    ]);
-});
 });
