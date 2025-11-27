@@ -85,19 +85,4 @@ Route::name('api.')->group(function () {
         Route::get('/me',     [AuthController::class, 'me'])->name('me');
         Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
     });
-    // ⚠️ RUTA TEMPORAL SOLO PARA DEPLOY - ELIMINAR DESPUÉS
-    Route::get('/run-migrations-force', function () {
-        try {
-            Artisan::call('migrate:fresh', ['--force' => true]);
-            return response()->json([
-                'success' => true,
-                'output' => Artisan::output()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-        }
-    });
 });

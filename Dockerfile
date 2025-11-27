@@ -1,57 +1,26 @@
-FROM php:8.2-apache
+# Imagen base con PHP 8.2 CLI
+FROM php:8.2-cli
 
-# Instalar dependencias del sistema
+# Instalar extensiones necesarias para PostgreSQL y demás
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    libpq-dev
+    git unzip libpq-dev libonig-dev \
+    && docker-php-ext-install pdo pdo_pgsql mbstring \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Limpiar cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Instalar Composer (copiado desde imagen oficial)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Instalar extensiones PHP
-RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd
+# Directorio de trabajo
+WORKDIR /app
 
-# Obtener Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copiar todo el proyecto dentro del contenedor
+COPY . /app
 
-# Establecer directorio de trabajo
-WORKDIR /var/www/html
+# Instalar dependencias de Laravel sin dev
+RUN composer install --no-dev --optimize-autoloader
 
-# Copiar archivos del proyecto
-COPY . /var/www/html
+# Dar permisos de escritura a storage y cache
+RUN chmod -R 775 storage bootstrap/cache || true
 
-# Instalar dependencias de Composer
-RUN composer install --optimize-autoloader --no-dev
-
-# Configurar permisos
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Habilitar mod_rewrite de Apache
-RUN a2enmod rewrite
-
-# Copiar configuración personalizada de Apache
-RUN echo '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
-    <Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
-
-# Exponer puerto 80
-EXPOSE 80
-
-# Ejecutar comandos de Laravel y iniciar Apache
-CMD php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan migrate:fresh --force && \
-    apache2-foreground
+# Comando de arranque: levantar la API con el servidor embebido
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
