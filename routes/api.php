@@ -85,4 +85,12 @@ Route::name('api.')->group(function () {
         Route::get('/me',     [AuthController::class, 'me'])->name('me');
         Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
     });
+
+    Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'database' => DB::connection()->getPdo() ? 'connected' : 'disconnected'
+    ]);
+});
 });
