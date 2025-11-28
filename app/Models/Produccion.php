@@ -16,6 +16,7 @@ class Produccion extends Model
     protected $fillable = [
         'loteid',
         'cantidadkg',
+        'unidadmedidaid',
         'fechacosecha',
         'destinoproduccionid',
         'imagenurl',
@@ -23,20 +24,44 @@ class Produccion extends Model
     ];
 
     protected $casts = [
-        'produccionid'      => 'integer',
-        'loteid'            => 'integer',
-        'cantidadkg'        => 'float',
+        'produccionid'       => 'integer',
+        'loteid'             => 'integer',
+        'cantidadkg'         => 'float',
+        'unidadmedidaid'     => 'integer',
         'destinoproduccionid'=> 'integer',
-        'fechacosecha'      => 'date',
+        'fechacosecha'       => 'date',
     ];
 
     protected $hidden = [
         'lote',
         'destino',
         'venta',
+        'unidadMedida',
+        'almacenamientos',
     ];
 
-    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
-    public function destino(){ return $this->belongsTo(DestinoProduccion::class,'destinoproduccionid','destinoproduccionid'); }
-    public function venta(){ return $this->hasOne(Venta::class,'produccionid','produccionid'); }
+    public function lote()
+    {
+        return $this->belongsTo(Lote::class,'loteid','loteid');
+    }
+
+    public function destino()
+    {
+        return $this->belongsTo(DestinoProduccion::class,'destinoproduccionid','destinoproduccionid');
+    }
+
+    public function venta()
+    {
+        return $this->hasOne(Venta::class,'produccionid','produccionid');
+    }
+
+    public function unidadMedida()
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
+
+    public function almacenamientos()
+    {
+        return $this->hasMany(ProduccionAlmacenamiento::class, 'produccionid', 'produccionid');
+    }
 }

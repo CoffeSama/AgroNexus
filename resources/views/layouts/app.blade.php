@@ -321,8 +321,8 @@
                     </li>
 
                     {{-- INVENTARIO (DESPLEGABLE) --}}
-                    <li class="nav-item {{ request()->routeIs('insumos.*','lote-insumos.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link {{ request()->routeIs('insumos.*','lote-insumos.*') ? 'active' : '' }}">
+                    <li class="nav-item {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-warehouse"></i>
                             <p>
                                 Inventario
@@ -332,16 +332,34 @@
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{ route('insumos.index') }}"
-                                   class="nav-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}">
+                                class="nav-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Insumos</p>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('lote-insumos.index') }}"
-                                   class="nav-link {{ request()->routeIs('lote-insumos.*') ? 'active' : '' }}">
+                                class="nav-link {{ request()->routeIs('lote-insumos.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Aplicación de Insumos</p>
+                                </a>
+                            </li>
+
+                            {{-- NUEVO: Almacenes --}}
+                            <li class="nav-item">
+                                <a href="{{ route('almacenes.index') }}"
+                                class="nav-link {{ request()->routeIs('almacenes.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Almacenes</p>
+                                </a>
+                            </li>
+
+                            {{-- NUEVO: Almacenamiento de Producción --}}
+                            <li class="nav-item">
+                                <a href="{{ route('producciones_almacenamiento.index') }}"
+                                class="nav-link {{ request()->routeIs('producciones_almacenamiento.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Almacenamiento de Producción</p>
                                 </a>
                             </li>
                         </ul>
@@ -377,7 +395,8 @@
                             'estado-lote-tipos.*',
                             'estado-lote-insumos.*',
                             'historial-estados-lote.*',
-                            'prioridades.*'
+                            'prioridades.*',
+                            'tipoalmacenes.*'
                         ) ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link
                             {{ request()->routeIs(
@@ -388,7 +407,8 @@
                                 'estado-lote-tipos.*',
                                 'estado-lote-insumos.*',
                                 'historial-estados-lote.*',
-                                'prioridades.*'
+                                'prioridades.*',
+                                'tipoalmacenes.*'
                             ) ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book-open"></i>
                             <p>
@@ -423,6 +443,13 @@
                                    class="nav-link {{ request()->routeIs('unidades-medida.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>Unidad de Medida</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('tipoalmacenes.index') }}"
+                                class="nav-link {{ request()->routeIs('tipoalmacenes.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Tipo de Almacén</p>
                                 </a>
                             </li>
                             <li class="nav-item">

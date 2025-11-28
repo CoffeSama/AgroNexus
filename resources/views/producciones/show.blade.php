@@ -11,7 +11,12 @@
         <p><strong>ID:</strong> {{ $produccion->produccionid }}</p>
 
         <p><strong>Lote:</strong> {{ $produccion->lote->nombre ?? '-' }}</p>
-        <p><strong>Cantidad (kg):</strong> {{ $produccion->cantidadkg }}</p>
+
+        <p><strong>Cantidad:</strong> 
+            {{ $produccion->cantidadkg }} 
+            {{ $produccion->unidadMedida->nombre ?? '' }}
+        </p>
+
         <p><strong>Fecha de cosecha:</strong> {{ $produccion->fechacosecha }}</p>
         <p><strong>Destino:</strong> {{ $produccion->destino->nombre ?? '-' }}</p>
         <p><strong>Observaciones:</strong> {{ $produccion->observaciones }}</p>

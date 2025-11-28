@@ -11,31 +11,36 @@ class ProduccionController extends Controller
     public function index()
     {
         return response()->json(
-            Produccion::with(['lote', 'destino'])->get()
+            Produccion::with(['lote', 'destino', 'unidadMedida', 'almacenamientos'])->get()
         );
     }
 
     public function show($id)
     {
         return response()->json(
-            Produccion::with(['lote', 'destino', 'venta'])->findOrFail($id)
+            Produccion::with(['lote', 'destino', 'venta', 'unidadMedida', 'almacenamientos'])
+                ->findOrFail($id)
         );
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'loteid' => 'required|exists:lote,loteid',
-            'cantidadkg' => 'nullable|numeric|min:0',
-            'fechacosecha' => 'nullable|date',
-            'destinoproduccionid' => 'nullable|exists:destinoproduccion,destinoproduccionid',
-            'imagenurl' => 'nullable|string|max:250',
-            'observaciones' => 'nullable|string',
+            'loteid'             => 'required|exists:lote,loteid',
+            'cantidadkg'         => 'nullable|numeric|min:0',
+            'unidadmedidaid'     => 'nullable|exists:unidadmedida,unidadmedidaid',
+            'fechacosecha'       => 'nullable|date',
+            'destinoproduccionid'=> 'nullable|exists:destinoproduccion,destinoproduccionid',
+            'imagenurl'          => 'nullable|string|max:250',
+            'observaciones'      => 'nullable|string',
         ]);
 
         $produccion = Produccion::create($data);
 
-        return response()->json($produccion, 201);
+        return response()->json(
+            $produccion->load(['lote', 'destino', 'unidadMedida', 'almacenamientos']),
+            201
+        );
     }
 
     public function update(Request $request, $id)
@@ -43,17 +48,20 @@ class ProduccionController extends Controller
         $produccion = Produccion::findOrFail($id);
 
         $data = $request->validate([
-            'loteid' => 'sometimes|exists:lote,loteid',
-            'cantidadkg' => 'nullable|numeric|min:0',
-            'fechacosecha' => 'nullable|date',
-            'destinoproduccionid' => 'nullable|exists:destinoproduccion,destinoproduccionid',
-            'imagenurl' => 'nullable|string|max:250',
-            'observaciones' => 'nullable|string',
+            'loteid'             => 'sometimes|exists:lote,loteid',
+            'cantidadkg'         => 'nullable|numeric|min:0',
+            'unidadmedidaid'     => 'nullable|exists:unidadmedida,unidadmedidaid',
+            'fechacosecha'       => 'nullable|date',
+            'destinoproduccionid'=> 'nullable|exists:destinoproduccion,destinoproduccionid',
+            'imagenurl'          => 'nullable|string|max:250',
+            'observaciones'      => 'nullable|string',
         ]);
 
         $produccion->update($data);
 
-        return response()->json($produccion);
+        return response()->json(
+            $produccion->load(['lote', 'destino', 'venta', 'unidadMedida', 'almacenamientos'])
+        );
     }
 
     public function destroy($id)

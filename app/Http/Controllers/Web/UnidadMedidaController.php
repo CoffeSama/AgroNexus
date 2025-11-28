@@ -33,37 +33,33 @@ class UnidadMedidaController extends Controller
             ->with('success', 'Unidad de medida creada correctamente.');
     }
 
-    public function show(UnidadMedida $unidades_medido)
+    // 👇 Ya no usamos $unidades_medido, ahora $unidad
+    public function show(UnidadMedida $unidad)
     {
-        // Si prefieres, cambia el nombre de la variable para que sea más legible:
-        $unidad = $unidades_medido;
-
         return view('unidades_medida.show', compact('unidad'));
     }
 
-    public function edit(UnidadMedida $unidades_medido)
+    public function edit(UnidadMedida $unidad)
     {
-        $unidad = $unidades_medido;
-
         return view('unidades_medida.edit', compact('unidad'));
     }
 
-    public function update(Request $request, UnidadMedida $unidades_medido)
+    public function update(Request $request, UnidadMedida $unidad)
     {
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:20'],
         ]);
 
-        $unidades_medido->update($data);
+        $unidad->update($data);
 
         return redirect()
             ->route('unidades-medida.index')
             ->with('success', 'Unidad de medida actualizada correctamente.');
     }
 
-    public function destroy(UnidadMedida $unidades_medido)
+    public function destroy(UnidadMedida $unidad)
     {
-        $unidades_medido->delete();
+        $unidad->delete();
 
         return redirect()
             ->route('unidades-medida.index')

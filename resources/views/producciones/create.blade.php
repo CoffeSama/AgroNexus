@@ -23,9 +23,19 @@
             </div>
 
             <div class="form-group">
-                <label>Cantidad (kg)</label>
+                <label>Cantidad</label>
                 <input type="number" step="0.01" name="cantidadkg"
                        class="form-control" min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Unidad de medida</label>
+                <select name="unidadmedidaid" class="form-control">
+                    <option value="">Seleccione...</option>
+                    @foreach($unidades as $u)
+                        <option value="{{ $u->unidadmedidaid }}">{{ $u->nombre }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="form-group">

@@ -22,11 +22,16 @@ use App\Http\Controllers\Web\VentaController;
 use App\Http\Controllers\Web\GestionUsuariosController;
 use App\Http\Controllers\Web\AuthController;
 
+// 🔹 nuevos controladores web de almacenamiento
+use App\Http\Controllers\Web\TipoAlmacenController;
+use App\Http\Controllers\Web\AlmacenController;
+use App\Http\Controllers\Web\ProduccionAlmacenamientoController;
+
 // ======================================================
 // RUTAS PÚBLICAS (SIN LOGIN)
 // ======================================================
 
-// Página inicial -> redirige al login (si quieres mantener el home, lo dejas como estaba)
+// Página inicial -> redirige al login
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -45,12 +50,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // ======================================================
 Route::middleware('auth')->group(function () {
 
-    // Si quieres un dashboard simple:
     Route::get('/dashboard', function () {
         return view('home');
     })->name('dashboard');
 
-    Route::resource('actividades', ActividadController::class);
+    Route::resource('actividades', ActividadController::class)
+        ->parameters(['actividades' => 'actividad']);
     Route::resource('climas', ClimaController::class);
     Route::resource('cultivos', CultivoController::class);
     Route::resource('estadolotes', EstadoLoteController::class);
@@ -60,12 +65,20 @@ Route::middleware('auth')->group(function () {
     Route::resource('insumos', InsumoController::class);
     Route::resource('lotes', LoteController::class);
     Route::resource('lote-insumos', LoteInsumoController::class);
-    Route::resource('prioridades', PrioridadController::class);
-    Route::resource('producciones', ProduccionController::class);
+    Route::resource('prioridades', PrioridadController::class)
+        ->parameters(['prioridades' => 'prioridad']);
+    Route::resource('producciones', ProduccionController::class)
+        ->parameters(['producciones' => 'produccion']);
     Route::resource('tipo-actividad', TipoActividadController::class);
     Route::resource('tipo-insumos', TipoInsumoController::class);
-    Route::resource('unidades-medida', UnidadMedidaController::class);
+    Route::resource('unidades-medida', UnidadMedidaController::class)
+        ->parameters(['unidades-medida' => 'unidad']);
     Route::resource('ventas', VentaController::class);
+    Route::resource('tipoalmacenes', TipoAlmacenController::class)
+        ->parameters(['tipoalmacenes' => 'tipoalmacen']);
+    Route::resource('almacenes', AlmacenController::class)
+        ->parameters(['almacenes' => 'almacen']);
+    Route::resource('producciones_almacenamiento', ProduccionAlmacenamientoController::class);
 
     // ==============================
     // GESTIÓN UNIFICADA DE USUARIOS

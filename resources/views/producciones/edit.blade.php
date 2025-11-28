@@ -26,10 +26,23 @@
             </div>
 
             <div class="form-group">
-                <label>Cantidad (kg)</label>
+                <label>Cantidad</label>
                 <input type="number" step="0.01" name="cantidadkg"
                        class="form-control" min="0"
                        value="{{ $produccion->cantidadkg }}">
+            </div>
+
+            <div class="form-group">
+                <label>Unidad de medida</label>
+                <select name="unidadmedidaid" class="form-control">
+                    <option value="">Seleccione...</option>
+                    @foreach($unidades as $u)
+                        <option value="{{ $u->unidadmedidaid }}"
+                            {{ $produccion->unidadmedidaid == $u->unidadmedidaid ? 'selected' : '' }}>
+                            {{ $u->nombre }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="form-group">
@@ -59,9 +72,7 @@
 
             <div class="form-group">
                 <label>Observaciones</label>
-                <textarea name="observaciones" class="form-control">
-                    {{ $produccion->observaciones }}
-                </textarea>
+                <textarea name="observaciones" class="form-control">{{ $produccion->observaciones }}</textarea>
             </div>
 
         </div>

@@ -29,6 +29,11 @@ use App\Http\Controllers\Api\VentaController;
 
 use App\Http\Controllers\Api\AuthController;
 
+// 🔹 nuevos controladores API
+use App\Http\Controllers\Api\TipoAlmacenController;
+use App\Http\Controllers\Api\AlmacenController;
+use App\Http\Controllers\Api\ProduccionAlmacenamientoController;
+
 Route::name('api.')->group(function () {
 
     // ENDPOINT DE PRUEBA
@@ -36,7 +41,9 @@ Route::name('api.')->group(function () {
         return response()->json(['ok' => true]);
     });
 
+    // ========================================================
     // GRUPO: CATÁLOGOS
+    // ========================================================
     Route::apiResource('tipoactividades', TipoActividadController::class);
     Route::apiResource('prioridades', PrioridadController::class);
     Route::apiResource('tipoinsumos', TipoInsumoController::class);
@@ -46,18 +53,33 @@ Route::name('api.')->group(function () {
     Route::apiResource('destinoproducciones', DestinoProduccionController::class);
     Route::apiResource('estadolote-insumos', EstadoLoteInsumoController::class);
 
+    // 🔹 nuevos catálogos de almacenamiento
+    Route::apiResource('tipo-almacenes', TipoAlmacenController::class);
+
+    // ========================================================
     // GRUPO: USUARIOS Y ROLES
+    // ========================================================
     Route::apiResource('roles', RolController::class);
     Route::apiResource('usuarios', UsuarioController::class);
     Route::apiResource('usuario-roles', UsuarioRolController::class);
 
+    // ========================================================
     // GRUPO: LOTES Y PRODUCCIÓN
+    // ========================================================
     Route::apiResource('lotes', LoteController::class);
     Route::apiResource('estadolotes', EstadoLoteController::class);
     Route::apiResource('producciones', ProduccionController::class);
     Route::apiResource('historial-estados-lote', HistorialEstadoLoteController::class);
 
+    // ========================================================
+    // GRUPO: ALMACENES Y ALMACENAMIENTO
+    // ========================================================
+    Route::apiResource('almacenes', AlmacenController::class);
+    Route::apiResource('producciones-almacenamiento', ProduccionAlmacenamientoController::class);
+
+    // ========================================================
     // GRUPO: INSUMOS Y APLICACIONES
+    // ========================================================
     Route::apiResource('insumos', InsumoController::class);
     Route::apiResource('lote-insumos', LoteInsumoController::class);
 

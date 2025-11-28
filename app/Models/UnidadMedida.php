@@ -19,11 +19,28 @@ class UnidadMedida extends Model
 
     protected $hidden = [
         'insumos',
+        'producciones',
+        'almacenes',
+        'almacenamientos',
     ];
 
-    // Relaciones
     public function insumos()
     {
         return $this->hasMany(Insumo::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
+
+    public function producciones()
+    {
+        return $this->hasMany(Produccion::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
+
+    public function almacenes()
+    {
+        return $this->hasMany(Almacen::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
+
+    public function almacenamientos()
+    {
+        return $this->hasMany(ProduccionAlmacenamiento::class, 'unidadmedidaid', 'unidadmedidaid');
     }
 }

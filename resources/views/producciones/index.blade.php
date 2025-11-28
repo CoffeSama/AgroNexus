@@ -16,7 +16,8 @@
                 <tr>
                     <th>ID</th>
                     <th>Lote</th>
-                    <th>Cantidad (kg)</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
                     <th>Fecha</th>
                     <th>Destino</th>
                     <th style="width:130px;">Acciones</th>
@@ -28,6 +29,7 @@
                         <td>{{ $p->produccionid }}</td>
                         <td>{{ $p->lote->nombre ?? '-' }}</td>
                         <td>{{ $p->cantidadkg }}</td>
+                        <td>{{ $p->unidadMedida->nombre ?? '-' }}</td>
                         <td>{{ $p->fechacosecha }}</td>
                         <td>{{ $p->destino->nombre ?? '-' }}</td>
 
@@ -54,7 +56,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-3">No hay producciones registradas.</td>
+                        <td colspan="7" class="text-center py-3">No hay producciones registradas.</td>
                     </tr>
                 @endforelse
             </tbody>
