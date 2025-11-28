@@ -141,7 +141,7 @@
                 </a>
             </li>
             <li class="nav-item d-none d-sm-inline-block">
-                <a href="{{ url('/') }}" class="nav-link">
+                <a href="{{ route('dashboard') }}" class="nav-link">
                     <i class="fas fa-leaf mr-2"></i>AgroNexus
                 </a>
             </li>
@@ -220,8 +220,7 @@
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
         {{-- Brand Logo --}}
-        <a href="{{ url('/') }}"
-           class="brand-link">
+        <a href="{{ route('dashboard') }}" class="brand-link">
             <img src="{{ asset('images/logo.png') }}"
                  alt="AgroNexus Logo"
                  class="brand-image img-circle elevation-3"
@@ -259,8 +258,8 @@
 
                     {{-- DASHBOARD --}}
                     <li class="nav-item">
-                        <a href="{{ url('/') }}"
-                           class="nav-link {{ request()->is('/') ? 'active' : '' }}">
+                        <a href="{{ route('dashboard') }}"
+                        class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
                             <p>Dashboard</p>
                         </a>
