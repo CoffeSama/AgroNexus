@@ -10,15 +10,21 @@
         </a>
     </div>
 
+    @if(session('success'))
+        <div class="alert alert-success m-3">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <div class="card-body p-0">
         <table class="table table-bordered table-hover mb-0">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Producción</th>
+                    <th>Produccion</th>
                     <th>Cliente</th>
-                    <th>Cantidad (kg)</th>
-                    <th>Precio/kg</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
                     <th>Total</th>
                     <th>Fecha venta</th>
                     <th style="width:130px;">Acciones</th>
@@ -29,10 +35,9 @@
                     <tr>
                         <td>{{ $v->ventaid }}</td>
                         <td>
-                            {{-- mostramos algo de la producción si existe --}}
                             @if($v->produccion)
                                 Prod #{{ $v->produccion->produccionid }}
-                                @if($v->produccion->lote ?? false)
+                                @if($v->produccion->lote)
                                     - {{ $v->produccion->lote->nombre }}
                                 @endif
                             @else
@@ -40,16 +45,25 @@
                             @endif
                         </td>
                         <td>{{ $v->cliente ?? '-' }}</td>
-                        <td>{{ $v->cantidadkg }}</td>
-                        <td>{{ $v->preciokg }}</td>
                         <td>
-                            @if(!is_null($v->cantidadkg) && !is_null($v->preciokg))
-                                {{ $v->cantidadkg * $v->preciokg }}
+                            {{ $v->cantidad ?? '-' }} 
+                            {{ $v->unidadMedida->abreviatura ?? '' }}
+                        </td>
+                        <td>
+                            @if($v->preciounitario)
+                                Bs. {{ number_format($v->preciounitario, 2) }}
                             @else
                                 -
                             @endif
                         </td>
-                        <td>{{ $v->fechaventa }}</td>
+                        <td>
+                            @if($v->total)
+                                <strong>Bs. {{ number_format($v->total, 2) }}</strong>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td>{{ $v->fechaventa ? $v->fechaventa->format('d/m/Y') : '-' }}</td>
 
                         <td>
                             <a href="{{ route('ventas.show', $v) }}" class="btn btn-info btn-sm">

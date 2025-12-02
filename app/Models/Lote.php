@@ -18,6 +18,7 @@ class Lote extends Model
         'nombre',
         'ubicacion',
         'superficie',
+        'unidadsuperficieid',
         'cultivoid',
         'fechasiembra',
         'estadolotetipoid',
@@ -29,22 +30,24 @@ class Lote extends Model
     ];
 
     protected $casts = [
-        'loteid'           => 'integer',
-        'usuarioid'        => 'integer',
-        'superficie'       => 'float',
-        'cultivoid'        => 'integer',
-        'estadolotetipoid' => 'integer',
-        'latitud'          => 'float',
-        'longitud'         => 'float',
-        'fechasiembra'     => 'date',
-        'fechacreacion'    => 'datetime',
-        'fechamodificacion'=> 'datetime',
+        'loteid'              => 'integer',
+        'usuarioid'           => 'integer',
+        'superficie'          => 'float',
+        'unidadsuperficieid'  => 'integer',
+        'cultivoid'           => 'integer',
+        'estadolotetipoid'    => 'integer',
+        'latitud'             => 'float',
+        'longitud'            => 'float',
+        'fechasiembra'        => 'date',
+        'fechacreacion'       => 'datetime',
+        'fechamodificacion'   => 'datetime',
     ];
 
     protected $hidden = [
         'usuario',
         'cultivo',
         'estadoTipo',
+        'unidadSuperficie',
         'estados',
         'producciones',
         'loteInsumos',
@@ -66,6 +69,11 @@ class Lote extends Model
     public function estadoTipo()
     {
         return $this->belongsTo(EstadoLoteTipo::class, 'estadolotetipoid', 'estadolotetipoid');
+    }
+
+    public function unidadSuperficie()
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidadsuperficieid', 'unidadmedidaid');
     }
 
     public function estados()

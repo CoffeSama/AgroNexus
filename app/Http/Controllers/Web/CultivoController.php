@@ -23,10 +23,20 @@ class CultivoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
+            'nombre' => ['required', 'string', 'max:100', 'unique:cultivo,nombre'],
         ]);
 
-        Cultivo::create($data);
+        $cultivo = Cultivo::create($data);
+
+        // Si es peticion AJAX, devolver JSON
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'cultivoid' => $cultivo->cultivoid,
+                'nombre' => $cultivo->nombre,
+                'message' => 'Cultivo creado exitosamente'
+            ]);
+        }
 
         return redirect()
             ->route('cultivos.index')
@@ -46,7 +56,7 @@ class CultivoController extends Controller
     public function update(Request $request, Cultivo $cultivo)
     {
         $data = $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
+            'nombre' => ['required', 'string', 'max:100', 'unique:cultivo,nombre,' . $cultivo->cultivoid . ',cultivoid'],
         ]);
 
         $cultivo->update($data);

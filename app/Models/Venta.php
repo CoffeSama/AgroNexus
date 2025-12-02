@@ -16,25 +16,36 @@ class Venta extends Model
     protected $fillable = [
         'produccionid',
         'cliente',
-        'cantidadkg',
-        'preciokg',
+        'cantidad',
+        'unidadmedidaid',
+        'preciounitario',
         'fechaventa',
         'observaciones',
-        // 'total' si existe en DB se calcula y se castea
+        // 'total' es columna GENERATED en PostgreSQL, no se incluye en fillable
     ];
 
     protected $casts = [
-        'ventaid'       => 'integer',
-        'produccionid'  => 'integer',
-        'cantidadkg'    => 'float',
-        'preciokg'      => 'float',
-        'total'         => 'float',   // se mantiene aunque sea columna generada
-        'fechaventa'    => 'datetime',
+        'ventaid'        => 'integer',
+        'produccionid'   => 'integer',
+        'cantidad'       => 'float',
+        'unidadmedidaid' => 'integer',
+        'preciounitario' => 'float',
+        'total'          => 'float',
+        'fechaventa'     => 'date',
     ];
 
     protected $hidden = [
         'produccion',
+        'unidadMedida',
     ];
 
-    public function produccion(){ return $this->belongsTo(Produccion::class,'produccionid','produccionid'); }
+    public function produccion()
+    {
+        return $this->belongsTo(Produccion::class, 'produccionid', 'produccionid');
+    }
+
+    public function unidadMedida()
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
 }

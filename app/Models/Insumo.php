@@ -53,4 +53,58 @@ class Insumo extends Model
     {
         return $this->hasMany(LoteInsumo::class, 'insumoid', 'insumoid');
     }
+
+    /**
+     * Decrementa el stock del insumo
+     * @param float $cantidad
+     * @return bool
+     * @throws \Exception
+     */
+    public function decrementarStock(float $cantidad): bool
+    {
+        if ($cantidad <= 0) {
+            throw new \Exception("La cantidad a decrementar debe ser mayor a 0");
+        }
+
+        if ($this->stock < $cantidad) {
+            throw new \Exception("Stock insuficiente. Disponible: {$this->stock} {$this->unidadMedida->abreviatura}");
+        }
+
+        $this->stock -= $cantidad;
+        return $this->save();
+    }
+
+    /**
+     * Incrementa el stock del insumo
+     * @param float $cantidad
+     * @return bool
+     */
+    public function incrementarStock(float $cantidad): bool
+    {
+        if ($cantidad <= 0) {
+            throw new \Exception("La cantidad a incrementar debe ser mayor a 0");
+        }
+
+        $this->stock += $cantidad;
+        return $this->save();
+    }
+
+    /**
+     * Verifica si hay stock suficiente
+     * @param float $cantidad
+     * @return bool
+     */
+    public function tieneStockSuficiente(float $cantidad): bool
+    {
+        return $this->stock >= $cantidad;
+    }
+
+    /**
+     * Verifica si el stock está por debajo del mínimo
+     * @return bool
+     */
+    public function stockBajo(): bool
+    {
+        return $this->stock <= $this->stockminimo;
+    }
 }

@@ -27,6 +27,15 @@ use App\Http\Controllers\Web\TipoAlmacenController;
 use App\Http\Controllers\Web\AlmacenController;
 use App\Http\Controllers\Web\ProduccionAlmacenamientoController;
 
+// 🔹 Controlador de Transacciones
+use App\Http\Controllers\Web\TransaccionesController;
+
+// 🔹 Dashboard Controller
+use App\Http\Controllers\Web\DashboardController;
+
+// 🔹 Reportes Controller
+use App\Http\Controllers\Web\ReporteController;
+
 // ======================================================
 // RUTAS PÚBLICAS (SIN LOGIN)
 // ======================================================
@@ -50,10 +59,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // ======================================================
 Route::middleware('auth')->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('home');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // API endpoints para clima (OpenWeather)
+    Route::get('/api/clima', [DashboardController::class, 'getClima'])->name('api.clima');
+    Route::get('/api/pronostico', [DashboardController::class, 'getPronostico'])->name('api.pronostico');
 
+    Route::get('actividades/calendario', [ActividadController::class, 'calendario'])->name('actividades.calendario');
     Route::resource('actividades', ActividadController::class)
         ->parameters(['actividades' => 'actividad']);
     Route::resource('climas', ClimaController::class);
@@ -63,6 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('estado-lote-tipos', EstadoLoteTipoController::class);
     Route::resource('historial-estados-lote', HistorialEstadoLoteController::class);
     Route::resource('insumos', InsumoController::class);
+    Route::get('lotes/mapa', [LoteController::class, 'mapa'])->name('lotes.mapa');
     Route::resource('lotes', LoteController::class);
     Route::resource('lote-insumos', LoteInsumoController::class);
     Route::resource('prioridades', PrioridadController::class)
@@ -105,4 +118,53 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/gestion-usuarios/rol/{rol}', [GestionUsuariosController::class, 'destroyRol'])
         ->name('gestion.rol.destroy');
+
+    // ==============================
+    // REPORTES
+    // ==============================
+    Route::prefix('reportes')->name('reportes.')->group(function () {
+        Route::get('/', [ReporteController::class, 'index'])->name('index');
+        Route::get('/ventas', [ReporteController::class, 'ventas'])->name('ventas');
+        Route::get('/inventario', [ReporteController::class, 'inventario'])->name('inventario');
+        Route::get('/produccion', [ReporteController::class, 'produccion'])->name('produccion');
+        Route::get('/climatico', [ReporteController::class, 'climatico'])->name('climatico');
+        Route::get('/actividades', [ReporteController::class, 'actividades'])->name('actividades');
+        Route::get('/exportar/{tipo}', [ReporteController::class, 'exportar'])->name('exportar');
+    });
+
+    // ==============================
+    // TRANSACCIONES AGRÍCOLAS
+    // ==============================
+    Route::prefix('transacciones')->name('transacciones.')->group(function () {
+        // Dashboard
+        Route::get('/', [TransaccionesController::class, 'index'])->name('index');
+
+        // Siembra
+        Route::get('/siembra', [TransaccionesController::class, 'siembraCreate'])->name('siembra.create');
+        Route::post('/siembra', [TransaccionesController::class, 'siembraStore'])->name('siembra.store');
+
+        // Fertilización
+        Route::get('/fertilizacion', [TransaccionesController::class, 'fertilizacionCreate'])->name('fertilizacion.create');
+        Route::post('/fertilizacion', [TransaccionesController::class, 'fertilizacionStore'])->name('fertilizacion.store');
+
+        // Control de Plagas
+        Route::get('/control-plagas', [TransaccionesController::class, 'controlPlagasCreate'])->name('control-plagas.create');
+        Route::post('/control-plagas', [TransaccionesController::class, 'controlPlagasStore'])->name('control-plagas.store');
+
+        // Riego
+        Route::get('/riego', [TransaccionesController::class, 'riegoCreate'])->name('riego.create');
+        Route::post('/riego', [TransaccionesController::class, 'riegoStore'])->name('riego.store');
+
+        // Cosecha
+        Route::get('/cosecha', [TransaccionesController::class, 'cosechaCreate'])->name('cosecha.create');
+        Route::post('/cosecha', [TransaccionesController::class, 'cosechaStore'])->name('cosecha.store');
+
+        // Venta
+        Route::get('/venta', [TransaccionesController::class, 'ventaCreate'])->name('venta.create');
+        Route::post('/venta', [TransaccionesController::class, 'ventaStore'])->name('venta.store');
+
+        // AJAX endpoints
+        Route::get('/api/lote/{id}', [TransaccionesController::class, 'getLoteInfo'])->name('api.lote');
+        Route::get('/api/insumo/{id}', [TransaccionesController::class, 'getInsumoInfo'])->name('api.insumo');
+    });
 });

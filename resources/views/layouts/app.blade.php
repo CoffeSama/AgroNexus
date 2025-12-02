@@ -31,7 +31,6 @@
             --border-color: #dee2e6;
         }
 
-        /* NAVBAR SUPERIOR (igual que maqueta) */
         .main-header {
             background: var(--primary-color) !important;
             border-bottom: 3px solid var(--secondary-color);
@@ -45,7 +44,6 @@
             color: #ffffff !important;
         }
 
-        /* SIDEBAR (igual que maqueta) */
         .main-sidebar {
             background: #2d3748 !important;
         }
@@ -74,12 +72,10 @@
             color: #ffffff;
         }
 
-        /* Flecha de los menús desplegables */
         .nav-sidebar .nav-item > .nav-link .right {
             margin-left: auto;
         }
 
-        /* Fondo del contenido (igual que maqueta) */
         .content-wrapper {
             background: #f8f9fc;
         }
@@ -88,7 +84,6 @@
             background: #f8f9fc;
         }
 
-        /* Ajuste pequeño para el avatar del sidebar como en la maqueta */
         .user-panel img {
             width: 35px;
             height: 35px;
@@ -96,7 +91,6 @@
             object-fit: cover;
         }
 
-        /* FOOTER (mismo estilo visual que la maqueta) */
         .main-footer {
             background: #ffffff;
             border-top: 1px solid #dee2e6;
@@ -133,7 +127,6 @@
 
     {{-- NAVBAR SUPERIOR --}}
     <nav class="main-header navbar navbar-expand navbar-dark">
-        {{-- Left navbar links --}}
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button">
@@ -141,16 +134,14 @@
                 </a>
             </li>
             <li class="nav-item d-none d-sm-inline-block">
-                <a href="{{ route('dashboard') }}" class="nav-link">
-                    <i class="fas fa-leaf mr-2"></i>AgroNexus
+                <a href="{{ route('dashboard') }}" class="nav-link d-flex align-items-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo" style="height: 28px; margin-right: 8px;">
+                    <span class="font-weight-bold">AgroNexus</span>
                 </a>
             </li>
         </ul>
 
-        {{-- Right navbar links --}}
         <ul class="navbar-nav ml-auto">
-
-            {{-- Notificaciones (demo) --}}
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="far fa-bell"></i>
@@ -167,14 +158,12 @@
                 </div>
             </li>
 
-            {{-- Pantalla completa --}}
             <li class="nav-item">
                 <a class="nav-link" data-widget="fullscreen" href="#" role="button">
                     <i class="fas fa-expand-arrows-alt"></i>
                 </a>
             </li>
 
-            {{-- Usuario actual (dropdown) --}}
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
                     <img src="{{ $userImageUrl }}"
@@ -188,7 +177,6 @@
                     </span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                    {{-- User image --}}
                     <li class="user-header bg-primary">
                         <img src="{{ $userImageUrl }}"
                              class="img-circle elevation-2" alt="User Image">
@@ -201,8 +189,6 @@
                             <small>AgroNexus · Panel Administrativo</small>
                         </p>
                     </li>
-
-                    {{-- Menu Footer--}}
                     <li class="user-footer">
                         <a href="#" class="btn btn-default btn-flat">Perfil</a>
                         <form action="{{ route('logout') }}" method="POST" class="d-inline float-right">
@@ -212,14 +198,12 @@
                     </li>
                 </ul>
             </li>
-
         </ul>
     </nav>
 
     {{-- SIDEBAR --}}
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
-        {{-- Brand Logo --}}
         <a href="{{ route('dashboard') }}" class="brand-link">
             <img src="{{ asset('images/logo.png') }}"
                  alt="AgroNexus Logo"
@@ -228,10 +212,8 @@
             <span class="brand-text font-weight-light">AgroNexus</span>
         </a>
 
-        {{-- Sidebar --}}
         <div class="sidebar">
 
-            {{-- Panel de usuario --}}
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
                     <img src="{{ $userImageUrl }}"
@@ -249,7 +231,6 @@
                 </div>
             </div>
 
-            {{-- Menú lateral --}}
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column"
                     data-widget="treeview"
@@ -265,7 +246,7 @@
                         </a>
                     </li>
 
-                    {{-- GESTIÓN DE LOTES (DESPLEGABLE) --}}
+                    {{-- GESTIÓN DE LOTES --}}
                     <li class="nav-item {{ request()->routeIs('lotes.*','actividades.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('lotes.*','actividades.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-map-marked-alt"></i>
@@ -277,22 +258,36 @@
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
                                 <a href="{{ route('lotes.index') }}"
-                                   class="nav-link {{ request()->routeIs('lotes.*') ? 'active' : '' }}">
+                                   class="nav-link {{ request()->routeIs('lotes.index') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Lotes</p>
+                                    <p>Lista de Lotes</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('lotes.mapa') }}"
+                                   class="nav-link {{ request()->routeIs('lotes.mapa') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Mapa de Lotes</p>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('actividades.index') }}"
-                                   class="nav-link {{ request()->routeIs('actividades.*') ? 'active' : '' }}">
+                                   class="nav-link {{ request()->routeIs('actividades.index') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Actividades</p>
+                                    <p>Lista Actividades</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('actividades.calendario') }}"
+                                   class="nav-link {{ request()->routeIs('actividades.calendario') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Calendario</p>
                                 </a>
                             </li>
                         </ul>
                     </li>
 
-                    {{-- PRODUCCIÓN (DESPLEGABLE) --}}
+                    {{-- PRODUCCIÓN --}}
                     <li class="nav-item {{ request()->routeIs('producciones.*','climas.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('producciones.*','climas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-seedling"></i>
@@ -319,7 +314,7 @@
                         </ul>
                     </li>
 
-                    {{-- INVENTARIO (DESPLEGABLE) --}}
+                    {{-- INVENTARIO --}}
                     <li class="nav-item {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-warehouse"></i>
@@ -343,8 +338,6 @@
                                     <p>Aplicación de Insumos</p>
                                 </a>
                             </li>
-
-                            {{-- NUEVO: Almacenes --}}
                             <li class="nav-item">
                                 <a href="{{ route('almacenes.index') }}"
                                 class="nav-link {{ request()->routeIs('almacenes.*') ? 'active' : '' }}">
@@ -352,8 +345,6 @@
                                     <p>Almacenes</p>
                                 </a>
                             </li>
-
-                            {{-- NUEVO: Almacenamiento de Producción --}}
                             <li class="nav-item">
                                 <a href="{{ route('producciones_almacenamiento.index') }}"
                                 class="nav-link {{ request()->routeIs('producciones_almacenamiento.*') ? 'active' : '' }}">
@@ -364,7 +355,7 @@
                         </ul>
                     </li>
 
-                    {{-- VENTAS (DESPLEGABLE) --}}
+                    {{-- VENTAS --}}
                     <li class="nav-item {{ request()->routeIs('ventas.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('ventas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-dollar-sign"></i>
@@ -384,31 +375,64 @@
                         </ul>
                     </li>
 
-                    {{-- CATÁLOGOS (DESPLEGABLE) --}}
-                    <li class="nav-item
-                        {{ request()->routeIs(
-                            'cultivos.*',
-                            'tipo-actividad.*',
-                            'tipo-insumos.*',
-                            'unidades-medida.*',
-                            'estado-lote-tipos.*',
-                            'estado-lote-insumos.*',
-                            'historial-estados-lote.*',
-                            'prioridades.*',
-                            'tipoalmacenes.*'
-                        ) ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link
-                            {{ request()->routeIs(
-                                'cultivos.*',
-                                'tipo-actividad.*',
-                                'tipo-insumos.*',
-                                'unidades-medida.*',
-                                'estado-lote-tipos.*',
-                                'estado-lote-insumos.*',
-                                'historial-estados-lote.*',
-                                'prioridades.*',
-                                'tipoalmacenes.*'
-                            ) ? 'active' : '' }}">
+                    {{-- REPORTES --}}
+                    <li class="nav-item {{ request()->routeIs('reportes.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-chart-bar"></i>
+                            <p>
+                                Reportes
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.index') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.index') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Centro de Reportes</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.ventas') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.ventas') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Ventas</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.inventario') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.inventario') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Inventario</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.produccion') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.produccion') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Producción</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.climatico') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.climatico') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Climático</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('reportes.actividades') }}" 
+                                   class="nav-link {{ request()->routeIs('reportes.actividades') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Actividades</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    {{-- CATÁLOGOS --}}
+                    <li class="nav-item {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book-open"></i>
                             <p>
                                 Catálogos
@@ -498,7 +522,6 @@
     {{-- CONTENT WRAPPER --}}
     <div class="content-wrapper">
 
-        {{-- Content Header (Page header) --}}
         <div class="content-header">
             <div class="container-fluid">
                 <div class="row mb-2">
@@ -514,7 +537,6 @@
             </div>
         </div>
 
-        {{-- Main content --}}
         <section class="content">
             <div class="container-fluid">
                 @yield('content')

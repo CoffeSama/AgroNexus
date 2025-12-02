@@ -15,8 +15,9 @@ class Produccion extends Model
 
     protected $fillable = [
         'loteid',
-        'cantidadkg',
+        'cantidad',
         'unidadmedidaid',
+        'cantidad_base',
         'fechacosecha',
         'destinoproduccionid',
         'imagenurl',
@@ -24,35 +25,36 @@ class Produccion extends Model
     ];
 
     protected $casts = [
-        'produccionid'       => 'integer',
-        'loteid'             => 'integer',
-        'cantidadkg'         => 'float',
-        'unidadmedidaid'     => 'integer',
-        'destinoproduccionid'=> 'integer',
-        'fechacosecha'       => 'date',
+        'produccionid'        => 'integer',
+        'loteid'              => 'integer',
+        'cantidad'            => 'float',
+        'unidadmedidaid'      => 'integer',
+        'cantidad_base'       => 'float',
+        'destinoproduccionid' => 'integer',
+        'fechacosecha'        => 'date',
     ];
 
     protected $hidden = [
         'lote',
         'destino',
-        'venta',
+        'ventas',
         'unidadMedida',
         'almacenamientos',
     ];
 
     public function lote()
     {
-        return $this->belongsTo(Lote::class,'loteid','loteid');
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid');
     }
 
     public function destino()
     {
-        return $this->belongsTo(DestinoProduccion::class,'destinoproduccionid','destinoproduccionid');
+        return $this->belongsTo(DestinoProduccion::class, 'destinoproduccionid', 'destinoproduccionid');
     }
 
-    public function venta()
+    public function ventas()
     {
-        return $this->hasOne(Venta::class,'produccionid','produccionid');
+        return $this->hasMany(Venta::class, 'produccionid', 'produccionid');
     }
 
     public function unidadMedida()
@@ -63,5 +65,14 @@ class Produccion extends Model
     public function almacenamientos()
     {
         return $this->hasMany(ProduccionAlmacenamiento::class, 'produccionid', 'produccionid');
+    }
+
+    /**
+     * Obtiene la cantidad disponible para venta (cantidad - vendido)
+     */
+    public function getCantidadDisponibleAttribute()
+    {
+        $vendido = $this->ventas()->sum('cantidad');
+        return $this->cantidad - $vendido;
     }
 }
