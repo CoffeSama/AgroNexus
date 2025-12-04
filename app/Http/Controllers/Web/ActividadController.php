@@ -145,8 +145,9 @@ class ActividadController extends Controller
         $lotes = Lote::with('usuario')->get();
         $tipos = TipoActividad::all();
         $prioridades = Prioridad::all();
+        $usuarios = Usuario::orderBy('nombre')->get();
 
-        return view('actividades.edit', compact('actividad', 'lotes', 'tipos', 'prioridades'));
+        return view('actividades.edit', compact('actividad', 'lotes', 'tipos', 'prioridades', 'usuarios'));
     }
 
     public function update(Request $request, Actividad $actividad)

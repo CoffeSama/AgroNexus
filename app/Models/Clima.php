@@ -19,6 +19,10 @@ class Clima extends Model
         'temperatura',
         'humedad',
         'lluvia',
+        'viento',
+        'presion',
+        'descripcion',
+        'icono',
         'observaciones',
     ];
 
@@ -28,12 +32,13 @@ class Clima extends Model
         'temperatura' => 'float',
         'humedad'     => 'float',
         'lluvia'      => 'float',
+        'viento'      => 'float',
+        'presion'     => 'integer',
         'fecha'       => 'datetime',
     ];
 
-    protected $hidden = [
-        'lote',
-    ];
-
-    public function lote(){ return $this->belongsTo(Lote::class,'loteid','loteid'); }
+    public function lote()
+    { 
+        return $this->belongsTo(Lote::class, 'loteid', 'loteid'); 
+    }
 }

@@ -53,14 +53,31 @@
     .fc-daygrid-day.fc-day-today { background: rgba(40, 167, 69, 0.1) !important; }
     .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { color: var(--success-color); font-weight: 700; }
 
-    /* Eventos por tipo */
-    .fc-event { border-radius: 4px; padding: 2px 5px; font-size: 12px; cursor: pointer; }
-    .fc-event.event-siembra { background: var(--success-color) !important; border-color: var(--success-color) !important; }
-    .fc-event.event-riego { background: var(--info-color) !important; border-color: var(--info-color) !important; }
-    .fc-event.event-cosecha { background: var(--warning-color) !important; border-color: var(--warning-color) !important; color: var(--text-dark) !important; }
-    .fc-event.event-fumigacion, .fc-event.event-fumigación { background: var(--danger-color) !important; border-color: var(--danger-color) !important; }
-    .fc-event.event-preparacion, .fc-event.event-labranza { background: #6c757d !important; border-color: #6c757d !important; }
-    .fc-event.event-fertilizacion, .fc-event.event-fertilización { background: #fd7e14 !important; border-color: #fd7e14 !important; }
+    /* Eventos por tipo - texto siempre visible */
+    .fc-event { 
+        border-radius: 4px; 
+        padding: 3px 6px; 
+        font-size: 12px; 
+        cursor: pointer; 
+        font-weight: 600;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .fc-event .fc-event-title { color: white !important; }
+    .fc-event .fc-event-time { color: rgba(255,255,255,0.9) !important; }
+    
+    .fc-event.event-siembra { background: #28a745 !important; border-color: #1e7e34 !important; }
+    .fc-event.event-riego { background: #17a2b8 !important; border-color: #117a8b !important; }
+    .fc-event.event-cosecha { background: #e67e00 !important; border-color: #cc7000 !important; color: white !important; }
+    .fc-event.event-fumigacion, .fc-event.event-fumigación { background: #dc3545 !important; border-color: #bd2130 !important; }
+    .fc-event.event-preparacion, .fc-event.event-labranza { background: #6c757d !important; border-color: #545b62 !important; }
+    .fc-event.event-fertilizacion, .fc-event.event-fertilización { background: #fd7e14 !important; border-color: #dc6502 !important; }
+    .fc-event.event-control { background: #6f42c1 !important; border-color: #5a32a3 !important; }
+    .fc-event.event-poda { background: #20c997 !important; border-color: #17a085 !important; }
+    
+    /* Vista de lista - texto visible */
+    .fc-list-event-title { color: #1a252f !important; font-weight: 500; }
+    .fc-list-event-time { color: #495057 !important; }
 
     /* Stats cards */
     .stats-card {

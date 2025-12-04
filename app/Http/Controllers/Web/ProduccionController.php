@@ -46,8 +46,13 @@ class ProduccionController extends Controller
         
         // Solo unidades de peso para la cosecha
         $unidades = UnidadMedida::where('categoria', 'peso')->get();
+        
+        // Almacenes activos con su ocupación actual
+        $almacenes = Almacen::with(['tipoAlmacen', 'unidadMedida', 'almacenamientos'])
+            ->where('activo', true)
+            ->get();
 
-        return view('producciones.create', compact('lotes', 'unidades'));
+        return view('producciones.create', compact('lotes', 'unidades', 'almacenes'));
     }
 
     public function store(Request $request)
@@ -57,6 +62,8 @@ class ProduccionController extends Controller
             'cantidad'       => 'required|numeric|min:0.01',
             'unidadmedidaid' => 'required|exists:unidadmedida,unidadmedidaid',
             'observaciones'  => 'nullable|string',
+            'enviar_almacen' => 'nullable|boolean',
+            'almacenid'      => 'nullable|exists:almacen,almacenid',
         ]);
 
         DB::beginTransaction();
@@ -68,25 +75,6 @@ class ProduccionController extends Controller
             if ($lote->estadoTipo->nombre !== 'en producción') {
                 return back()->withErrors([
                     'loteid' => "El lote debe estar 'en producción' para registrar cosecha. Estado actual: {$lote->estadoTipo->nombre}"
-                ])->withInput();
-            }
-
-            // Buscar almacén correspondiente al cultivo
-            $nombreAlmacen = $this->cultivoAlmacenMap[$lote->cultivoid] ?? null;
-            $almacen = null;
-            
-            if ($nombreAlmacen) {
-                $almacen = Almacen::where('nombre', $nombreAlmacen)->where('activo', true)->first();
-            }
-
-            // Si no hay almacén específico, buscar uno genérico activo
-            if (!$almacen) {
-                $almacen = Almacen::where('activo', true)->first();
-            }
-
-            if (!$almacen) {
-                return back()->withErrors([
-                    'error' => "No hay almacenes disponibles para guardar la cosecha."
                 ])->withInput();
             }
 
@@ -103,15 +91,38 @@ class ProduccionController extends Controller
                 'observaciones'       => $data['observaciones'],
             ]);
 
-            // Enviar automáticamente al almacén correspondiente
-            ProduccionAlmacenamiento::create([
-                'produccionid'   => $produccion->produccionid,
-                'almacenid'      => $almacen->almacenid,
-                'cantidad'       => $data['cantidad'],
-                'unidadmedidaid' => $data['unidadmedidaid'],
-                'fechaentrada'   => now(),
-                'observaciones'  => "Entrada automática desde cosecha del lote {$lote->nombre}",
-            ]);
+            // Si se seleccionó enviar a almacén
+            $mensajeAlmacen = '';
+            $almacen = null;
+
+            if ($request->enviar_almacen && $request->almacenid) {
+                // Usar almacén seleccionado manualmente
+                $almacen = Almacen::find($request->almacenid);
+            }
+
+            // Si hay almacén, crear el registro de almacenamiento
+            if ($almacen) {
+                // Verificar capacidad disponible
+                $ocupado = ProduccionAlmacenamiento::where('almacenid', $almacen->almacenid)
+                    ->whereNull('fechasalida')
+                    ->sum('cantidad');
+                $disponible = $almacen->capacidad - $ocupado;
+
+                if ($data['cantidad'] > $disponible) {
+                    throw new \Exception("La cantidad a almacenar ({$data['cantidad']}) excede la capacidad disponible del almacén ({$disponible})");
+                }
+
+                ProduccionAlmacenamiento::create([
+                    'produccionid'   => $produccion->produccionid,
+                    'almacenid'      => $almacen->almacenid,
+                    'cantidad'       => $data['cantidad'],
+                    'unidadmedidaid' => $data['unidadmedidaid'],
+                    'fechaentrada'   => now(),
+                    'observaciones'  => "Cosecha del lote {$lote->nombre}",
+                ]);
+
+                $mensajeAlmacen = " y almacenado en {$almacen->nombre}";
+            }
 
             // Cambiar estado del lote a "cosechado"
             $estadoCosechado = EstadoLoteTipo::where('nombre', 'cosechado')->first();
@@ -128,7 +139,7 @@ class ProduccionController extends Controller
                     'loteid' => $lote->loteid,
                     'estadolotetipoid' => $estadoCosechado->estadolotetipoid,
                     'fecha_cambio' => now(),
-                    'observaciones' => "Cosecha: {$data['cantidad']} {$unidad->abreviatura}. Almacenado en: {$almacen->nombre}",
+                    'observaciones' => "Cosecha: {$data['cantidad']} {$unidad->abreviatura}" . $mensajeAlmacen,
                     'usuarioid' => $lote->usuarioid,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -140,7 +151,7 @@ class ProduccionController extends Controller
             $unidad = UnidadMedida::find($data['unidadmedidaid']);
             return redirect()
                 ->route('producciones.index')
-                ->with('success', "Cosecha registrada: {$data['cantidad']} {$unidad->abreviatura} de {$lote->cultivo->nombre}. Almacenado en: {$almacen->nombre}");
+                ->with('success', "¡Cosecha registrada! {$data['cantidad']} {$unidad->abreviatura} de {$lote->cultivo->nombre}" . $mensajeAlmacen);
 
         } catch (\Exception $e) {
             DB::rollBack();

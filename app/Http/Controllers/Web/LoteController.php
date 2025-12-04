@@ -148,8 +148,115 @@ class LoteController extends Controller
 
     public function show(Lote $lote)
     {
-        $lote->load(['usuario', 'cultivo', 'estadoTipo']);
-        return view('lotes.show', compact('lote'));
+        $lote->load([
+            'usuario', 
+            'cultivo', 
+            'estadoTipo',
+            'historialEstados.estadoTipo',
+            'historialEstados.usuario',
+            'loteInsumos.insumo',
+            'loteInsumos.usuario',
+            'actividades.tipoActividad',
+            'actividades.usuario',
+            'producciones.unidadMedida',
+            'producciones.destino',
+            'clima'
+        ]);
+
+        // Construir línea de tiempo/trazabilidad
+        $trazabilidad = collect();
+
+        // 1. Fecha de creación/siembra
+        if ($lote->fechasiembra) {
+            $trazabilidad->push([
+                'fecha' => $lote->fechasiembra,
+                'tipo' => 'siembra',
+                'titulo' => 'Siembra Iniciada',
+                'descripcion' => 'Cultivo: ' . ($lote->cultivo->nombre ?? 'No especificado'),
+                'icono' => 'seedling',
+                'color' => 'success'
+            ]);
+        }
+
+        // 2. Historial de estados
+        foreach ($lote->historialEstados as $historial) {
+            $trazabilidad->push([
+                'fecha' => $historial->fecha_cambio,
+                'tipo' => 'estado',
+                'titulo' => 'Cambio de Estado: ' . ($historial->estadoTipo->nombre ?? ''),
+                'descripcion' => $historial->observaciones ?? 'Sin observaciones',
+                'usuario' => $historial->usuario->nombre ?? null,
+                'icono' => 'exchange-alt',
+                'color' => 'info'
+            ]);
+        }
+
+        // 3. Aplicación de insumos
+        foreach ($lote->loteInsumos as $insumo) {
+            $trazabilidad->push([
+                'fecha' => $insumo->fechauo,
+                'tipo' => 'insumo',
+                'titulo' => 'Aplicación: ' . ($insumo->insumo->nombre ?? 'Insumo'),
+                'descripcion' => 'Cantidad: ' . $insumo->cantidadusada . ' - ' . ($insumo->observaciones ?? ''),
+                'usuario' => $insumo->usuario->nombre ?? null,
+                'icono' => 'flask',
+                'color' => 'warning'
+            ]);
+        }
+
+        // 4. Actividades realizadas
+        foreach ($lote->actividades as $actividad) {
+            $trazabilidad->push([
+                'fecha' => $actividad->fechainicio,
+                'tipo' => 'actividad',
+                'titulo' => $actividad->tipoActividad->nombre ?? 'Actividad',
+                'descripcion' => $actividad->descripcion ?? 'Sin descripción',
+                'usuario' => $actividad->usuario->nombre ?? null,
+                'icono' => 'tasks',
+                'color' => 'primary',
+                'completada' => $actividad->fechafin !== null
+            ]);
+        }
+
+        // 5. Producciones/Cosechas
+        foreach ($lote->producciones as $produccion) {
+            $trazabilidad->push([
+                'fecha' => $produccion->fechacosecha,
+                'tipo' => 'cosecha',
+                'titulo' => 'Cosecha Registrada',
+                'descripcion' => 'Cantidad: ' . number_format($produccion->cantidad, 2) . ' ' . ($produccion->unidadMedida->abreviatura ?? 'kg') . ' - Destino: ' . ($produccion->destino->nombre ?? 'No especificado'),
+                'icono' => 'tractor',
+                'color' => 'success'
+            ]);
+        }
+
+        // Ordenar por fecha descendente
+        $trazabilidad = $trazabilidad->sortByDesc('fecha')->values();
+
+        // Estadísticas del lote
+        $diasDesdeSiembra = null;
+        if ($lote->fechasiembra) {
+            $fechaSiembra = \Carbon\Carbon::parse($lote->fechasiembra);
+            // Si la fecha de siembra es futura, mostrar 0; si es pasada, mostrar días transcurridos
+            if ($fechaSiembra->isFuture()) {
+                $diasDesdeSiembra = 0;
+            } else {
+                $diasDesdeSiembra = (int) $fechaSiembra->diffInDays(now());
+            }
+        }
+
+        $estadisticas = [
+            'total_insumos' => $lote->loteInsumos->count(),
+            'total_actividades' => $lote->actividades->count(),
+            'actividades_completadas' => $lote->actividades->whereNotNull('fechafin')->count(),
+            'actividades_pendientes' => $lote->actividades->whereNull('fechafin')->count(),
+            'total_aplicaciones' => $lote->loteInsumos->count(),
+            'total_cosechas' => $lote->producciones->count(),
+            'produccion_total' => $lote->producciones->sum('cantidad'),
+            'dias_desde_siembra' => $diasDesdeSiembra,
+        ];
+
+        return view('lotes.show', compact('lote', 'trazabilidad', 'estadisticas'));
     }
 
     public function edit(Lote $lote)

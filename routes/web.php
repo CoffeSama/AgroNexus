@@ -68,7 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::get('actividades/calendario', [ActividadController::class, 'calendario'])->name('actividades.calendario');
     Route::resource('actividades', ActividadController::class)
         ->parameters(['actividades' => 'actividad']);
-    Route::resource('climas', ClimaController::class);
+    Route::get('climas', [ClimaController::class, 'index'])->name('climas.index');
     Route::resource('cultivos', CultivoController::class);
     Route::resource('estadolotes', EstadoLoteController::class);
     Route::resource('estado-lote-insumos', EstadoLoteInsumoController::class);

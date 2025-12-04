@@ -4,75 +4,105 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Clima;
-use App\Models\Lote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 
 class ClimaController extends Controller
 {
+    private $apiKey;
+    private $ciudad = 'Santa Cruz de la Sierra';
+    private $pais = 'BO';
+
+    public function __construct()
+    {
+        $this->apiKey = env('OPENWEATHER_API_KEY', '');
+    }
+
+    /**
+     * Mostrar vista de clima con datos actuales y historial
+     */
     public function index()
     {
-        $climas = Clima::with('lote')
-            ->orderBy('climaid', 'desc')
-            ->paginate(15);
+        // Intentar guardar el clima actual si no hay registro de hoy
+        $this->guardarClimaHoy();
 
-        return view('climas.index', compact('climas'));
+        // Obtener historial de los últimos 30 días
+        $historial = Clima::whereNull('loteid')
+            ->where('fecha', '>=', now()->subDays(30))
+            ->orderBy('fecha', 'desc')
+            ->get();
+
+        return view('climas.index', compact('historial'));
     }
 
-    public function create()
+    /**
+     * Guardar el clima de hoy desde la API (si no existe)
+     */
+    public function guardarClimaHoy()
     {
-        $lotes = Lote::all();
+        if (empty($this->apiKey)) {
+            return null;
+        }
 
-        return view('climas.create', compact('lotes'));
+        // Verificar si ya existe registro de hoy
+        $existeHoy = Clima::whereNull('loteid')
+            ->whereDate('fecha', today())
+            ->exists();
+
+        if ($existeHoy) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get("https://api.openweathermap.org/data/2.5/weather", [
+                'q' => "{$this->ciudad},{$this->pais}",
+                'appid' => $this->apiKey,
+                'units' => 'metric',
+                'lang' => 'es'
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                return Clima::create([
+                    'loteid' => null,
+                    'fecha' => now(),
+                    'temperatura' => round($data['main']['temp'], 1),
+                    'humedad' => $data['main']['humidity'],
+                    'lluvia' => $data['rain']['1h'] ?? $data['rain']['3h'] ?? 0,
+                    'viento' => round($data['wind']['speed'] * 3.6, 1),
+                    'presion' => $data['main']['pressure'],
+                    'descripcion' => $data['weather'][0]['description'],
+                    'icono' => $data['weather'][0]['icon'],
+                    'observaciones' => null,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar clima: ' . $e->getMessage());
+        }
+
+        return null;
     }
 
-    public function store(Request $request)
+    /**
+     * API endpoint para guardar clima manualmente (puede usarse con cron)
+     */
+    public function guardarDesdeApi()
     {
-        $data = $request->validate([
-            'loteid' => 'required|exists:lote,loteid',
-            'fecha' => 'nullable|date',
-            'temperatura' => 'nullable|numeric',
-            'humedad' => 'nullable|numeric|min:0|max:100',
-            'lluvia' => 'nullable|numeric|min:0',
-            'observaciones' => 'nullable|string|max:200',
+        $clima = $this->guardarClimaHoy();
+
+        if ($clima) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Clima guardado correctamente',
+                'data' => $clima
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo guardar el clima o ya existe registro de hoy'
         ]);
-
-        Clima::create($data);
-
-        return redirect()->route('climas.index')->with('success', 'Registro climático creado.');
-    }
-
-    public function show(Clima $clima)
-    {
-        return view('climas.show', compact('clima'));
-    }
-
-    public function edit(Clima $clima)
-    {
-        $lotes = Lote::all();
-
-        return view('climas.edit', compact('clima', 'lotes'));
-    }
-
-    public function update(Request $request, Clima $clima)
-    {
-        $data = $request->validate([
-            'loteid' => 'required|exists:lote,loteid',
-            'fecha' => 'nullable|date',
-            'temperatura' => 'nullable|numeric',
-            'humedad' => 'nullable|numeric|min:0|max:100',
-            'lluvia' => 'nullable|numeric|min:0',
-            'observaciones' => 'nullable|string|max:200',
-        ]);
-
-        $clima->update($data);
-
-        return redirect()->route('climas.index')->with('success', 'Registro climático actualizado.');
-    }
-
-    public function destroy(Clima $clima)
-    {
-        $clima->delete();
-
-        return redirect()->route('climas.index')->with('success', 'Registro climático eliminado.');
     }
 }

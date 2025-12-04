@@ -161,37 +161,31 @@ class ReporteController extends Controller
      */
     public function climatico(Request $request)
     {
-        $loteId = $request->get('lote_id');
         $dias = $request->get('dias', 7);
 
-        $climaActual = $this->obtenerClimaActual();
-        $pronostico = $this->obtenerPronostico();
+        // Historial de clima (registros generales sin lote específico)
+        $historialClima = Clima::whereNull('loteid')
+            ->where('fecha', '>=', now()->subDays($dias))
+            ->orderBy('fecha', 'desc')
+            ->get();
 
-        $query = Clima::with('lote')->orderBy('fecha', 'desc');
-        
-        if ($loteId) {
-            $query->where('loteid', $loteId);
-        }
-
-        $historialClima = $query->where('fecha', '>=', now()->subDays($dias))->get();
-
+        // Promedios del período
         $promedios = [
             'temperatura' => $historialClima->avg('temperatura') ?? 0,
             'humedad' => $historialClima->avg('humedad') ?? 0,
-            'precipitacion' => $historialClima->sum('lluvia') ?? 0,
+            'viento' => $historialClima->avg('viento') ?? 0,
         ];
 
-        $datosGrafico = Clima::selectRaw('DATE(fecha) as dia, AVG(temperatura) as temp, AVG(humedad) as hum, SUM(lluvia) as prec')
+        // Datos para el gráfico
+        $datosGrafico = Clima::selectRaw("TO_CHAR(fecha, 'DD/MM') as dia, AVG(temperatura) as temp, AVG(humedad) as hum")
+            ->whereNull('loteid')
             ->where('fecha', '>=', now()->subDays($dias))
-            ->when($loteId, fn($q) => $q->where('loteid', $loteId))
-            ->groupBy('dia')
-            ->orderBy('dia')
+            ->groupByRaw("TO_CHAR(fecha, 'DD/MM'), DATE(fecha)")
+            ->orderByRaw('DATE(fecha)')
             ->get();
 
-        $lotes = Lote::orderBy('nombre')->get();
-
         return view('reportes.climatico', compact(
-            'climaActual', 'pronostico', 'historialClima', 'promedios', 'datosGrafico', 'lotes', 'loteId', 'dias'
+            'historialClima', 'promedios', 'datosGrafico', 'dias'
         ));
     }
 
