@@ -11,6 +11,7 @@ use App\Models\Produccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use App\Services\SupabaseStorage;
 
 class LoteController extends Controller
 {
@@ -116,7 +117,7 @@ class LoteController extends Controller
         return view('lotes.create', compact('usuarios', 'cultivos', 'estados'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SupabaseStorage $storage)
     {
         $data = $request->validate([
             'usuarioid' => 'required|exists:usuario,usuarioid',
@@ -128,18 +129,27 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen' => 'nullable|image',
         ]);
 
-        // Procesar imagen si se subió
+        // SUBIR IMAGEN A SUPABASE
         if ($request->hasFile('imagen')) {
-            $imagen = $request->file('imagen');
-            $nombreArchivo = 'lote_' . time() . '.' . $imagen->getClientOriginalExtension();
-            $imagen->move(public_path('images/lotes'), $nombreArchivo);
-            $data['imagenurl'] = 'images/lotes/' . $nombreArchivo;
+            $file = $request->file('imagen');
+
+            $filename = 'lotes/' . uniqid('lote_') . '.' . $file->getClientOriginalExtension();
+
+            // subir
+            $storage->upload(
+                $filename,
+                file_get_contents($file),
+                $file->getMimeType()
+            );
+
+            // asignar URL pública
+            $data['imagenurl'] = $storage->getPublicUrl($filename);
         }
 
-        unset($data['imagen']); // Remover del array antes de crear
+        unset($data['imagen']);
 
         Lote::create($data);
 
@@ -268,7 +278,7 @@ class LoteController extends Controller
         return view('lotes.edit', compact('lote', 'usuarios', 'cultivos', 'estados'));
     }
 
-    public function update(Request $request, Lote $lote)
+    public function update(Request $request, Lote $lote, SupabaseStorage $storage)
     {
         $data = $request->validate([
             'usuarioid' => 'required|exists:usuario,usuarioid',
@@ -280,20 +290,35 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen' => 'nullable|image',
         ]);
 
-        // Procesar nueva imagen si se subió
+        // ¿Se subió una nueva imagen?
         if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($lote->imagenurl && file_exists(public_path($lote->imagenurl))) {
-                unlink(public_path($lote->imagenurl));
+
+            // ELIMINAR IMAGEN ANTERIOR EN SUPABASE (si existe)
+            if ($lote->imagenurl) {
+                // Extraer el path dentro del bucket
+                $path = str_replace(
+                    env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/',
+                    '',
+                    $lote->imagenurl
+                );
+
+                $storage->delete($path);
             }
 
-            $imagen = $request->file('imagen');
-            $nombreArchivo = 'lote_' . time() . '.' . $imagen->getClientOriginalExtension();
-            $imagen->move(public_path('images/lotes'), $nombreArchivo);
-            $data['imagenurl'] = 'images/lotes/' . $nombreArchivo;
+            // Subir nueva imagen
+            $file = $request->file('imagen');
+            $filename = 'lotes/' . uniqid('lote_') . '.' . $file->getClientOriginalExtension();
+
+            $storage->upload(
+                $filename,
+                file_get_contents($file),
+                $file->getMimeType()
+            );
+
+            $data['imagenurl'] = $storage->getPublicUrl($filename);
         }
 
         unset($data['imagen']);
@@ -303,11 +328,17 @@ class LoteController extends Controller
         return redirect()->route('lotes.index')->with('success', 'Lote actualizado.');
     }
 
-    public function destroy(Lote $lote)
+    public function destroy(Lote $lote, SupabaseStorage $storage)
     {
-        // Eliminar imagen si existe
-        if ($lote->imagenurl && file_exists(public_path($lote->imagenurl))) {
-            unlink(public_path($lote->imagenurl));
+        // ELIMINAR IMAGEN EN SUPABASE
+        if ($lote->imagenurl) {
+            $path = str_replace(
+                env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/',
+                '',
+                $lote->imagenurl
+            );
+
+            $storage->delete($path);
         }
 
         $lote->delete();

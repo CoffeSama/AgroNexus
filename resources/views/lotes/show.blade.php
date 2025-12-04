@@ -311,7 +311,7 @@
                         @if($lote->imagenurl)
                             <h5 class="mb-3"><i class="fas fa-image mr-2 text-success"></i>Imagen</h5>
                             <div class="text-center">
-                                <img src="{{ asset($lote->imagenurl) }}" alt="Lote" class="lote-image">
+                                <img src="{{ $lote->imagenurl }}" alt="Lote" class="lote-image">
                             </div>
                         @else
                             <h5 class="mb-3"><i class="fas fa-chart-pie mr-2 text-success"></i>Resumen</h5>

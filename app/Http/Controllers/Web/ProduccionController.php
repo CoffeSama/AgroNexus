@@ -26,6 +26,42 @@ class ProduccionController extends Controller
         6 => 'Bodega Caña',    // caña de azúcar
     ];
 
+    private function convertirAKg(float $cantidad, ?UnidadMedida $unidad): float
+    {
+        if (!$unidad) {
+            // Si no hay unidad, asumimos que ya está en kg
+            return $cantidad;
+        }
+
+        $abbr = strtolower(trim($unidad->abreviatura ?? $unidad->nombre ?? ''));
+
+        // Puedes ajustar este mapa según tus unidades reales
+        $factores = [
+            'kg'         => 1,
+            'kilogramo'  => 1,
+            'kilogramos' => 1,
+
+            'g'          => 0.001,
+            'gr'         => 0.001,
+            'gramo'      => 0.001,
+            'gramos'     => 0.001,
+
+            't'          => 1000,
+            'tn'         => 1000,
+            'ton'        => 1000,
+            'tonelada'   => 1000,
+            'toneladas'  => 1000,
+
+            'qq'         => 46,
+            'quintal'    => 46,
+            'quintales'  => 46,
+        ];
+
+        $factor = $factores[$abbr] ?? 1; // si no lo conoce, lo toma como kg
+
+        return $cantidad * $factor;
+    }
+
     public function index()
     {
         $producciones = Produccion::with(['lote.usuario', 'lote.cultivo', 'destino', 'unidadMedida', 'almacenamientos.almacen'])
@@ -101,17 +137,44 @@ class ProduccionController extends Controller
             }
 
             // Si hay almacén, crear el registro de almacenamiento
+            // Si hay almacén, crear el registro de almacenamiento
             if ($almacen) {
-                // Verificar capacidad disponible
-                $ocupado = ProduccionAlmacenamiento::where('almacenid', $almacen->almacenid)
-                    ->whereNull('fechasalida')
-                    ->sum('cantidad');
-                $disponible = $almacen->capacidad - $ocupado;
+                // ================================
+                // 1) Capacidad del almacén en KG
+                // ================================
+                $unidadAlmacen = $almacen->unidadMedida; // relación unidadMedida en modelo Almacen
+                $capacidadKg   = $this->convertirAKg((float) ($almacen->capacidad ?? 0), $unidadAlmacen);
 
-                if ($data['cantidad'] > $disponible) {
-                    throw new \Exception("La cantidad a almacenar ({$data['cantidad']}) excede la capacidad disponible del almacén ({$disponible})");
+                // ======================================
+                // 2) Ocupación actual del almacén en KG
+                // ======================================
+                $almacenamientos = ProduccionAlmacenamiento::with('unidadMedida')
+                    ->where('almacenid', $almacen->almacenid)
+                    ->whereNull('fechasalida')
+                    ->get();
+
+                $ocupadoKg = 0;
+                foreach ($almacenamientos as $alm) {
+                    $ocupadoKg += $this->convertirAKg((float) $alm->cantidad, $alm->unidadMedida);
                 }
 
+                // =====================================
+                // 3) Nueva cantidad a ingresar en KG
+                // =====================================
+                $unidadProduccion = UnidadMedida::find($data['unidadmedidaid']);
+                $nuevaCantidadKg  = $this->convertirAKg((float) $data['cantidad'], $unidadProduccion);
+
+                $disponibleKg = $capacidadKg - $ocupadoKg;
+
+                if ($nuevaCantidadKg > $disponibleKg) {
+                    throw new \Exception(
+                        "La cantidad a almacenar ({$data['cantidad']} {$unidadProduccion->abreviatura}) " .
+                        "excede la capacidad disponible del almacén. Disponible: " .
+                        round($disponibleKg, 2) . " kg"
+                    );
+                }
+
+                // Si pasa la validación, guardamos en la unidad que vino del formulario
                 ProduccionAlmacenamiento::create([
                     'produccionid'   => $produccion->produccionid,
                     'almacenid'      => $almacen->almacenid,

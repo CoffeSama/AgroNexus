@@ -213,7 +213,7 @@
                                         $fillClass = $porcentaje < 50 ? 'low' : ($porcentaje < 80 ? 'medium' : 'high');
                                     @endphp
                                     <div class="col-md-6 mb-2">
-                                        <div class="almacen-card" data-id="{{ $almacen->almacenid }}" data-disponible="{{ $disponible }}" data-nombre="{{ $almacen->nombre }}">
+                                        <div class="almacen-card" data-id="{{ $almacen->almacenid }}" data-disponible="{{ $disponible }}" data-nombre="{{ $almacen->nombre }}" data-um-almacen="{{ $almacen->unidadMedida->abreviatura }}">>
                                             <div class="d-flex align-items-start">
                                                 <div class="almacen-icon mr-2 text-center">
                                                     @if(str_contains(strtolower($almacen->tipoAlmacen->nombre ?? ''), 'silo'))
@@ -348,6 +348,32 @@
 
 @push('scripts')
 <script>
+    function convertirAKg(cantidad, unidad) {
+    unidad = unidad.toLowerCase().trim();
+
+    const factores = {
+        'kg': 1,
+        'kilogramo': 1,
+        'kilogramos': 1,
+
+        'g': 0.001,
+        'gramo': 0.001,
+        'gramos': 0.001,
+
+        't': 1000,
+        'tn': 1000,
+        'ton': 1000,
+        'tonelada': 1000,
+        'toneladas': 1000,
+
+        'qq': 46,
+        'quintal': 46,
+        'quintales': 46,
+    };
+
+    return cantidad * (factores[unidad] || 1);
+}
+
 $(document).ready(function() {
     // Mostrar info del lote
     $('#loteid').on('change', function() {
@@ -396,9 +422,22 @@ $(document).ready(function() {
         $('#infoAlmacenSelected').html('<i class="fas fa-warehouse mr-1"></i> <strong>Almacén:</strong> ' + nombre);
 
         // Verificar capacidad
+        // Verificar capacidad CON CONVERSIÓN DE UNIDADES
         const cantidad = parseFloat($('#cantidad').val()) || 0;
-        if (cantidad > 0 && cantidad > disponible) {
-            alert('⚠️ Advertencia: La cantidad (' + cantidad + ') excede la capacidad disponible del almacén (' + disponible + ')');
+
+        if (cantidad > 0) {
+            const umProduccion = $('#unidadmedidaid option:selected').data('abrev');
+            const umAlmacen = $(this).data('um-almacen');
+
+            const cantidadKg = convertirAKg(cantidad, umProduccion);
+            const disponibleKg = convertirAKg(disponible, umAlmacen);
+
+            if (cantidadKg > disponibleKg) {
+                alert(
+                    '⚠️ Advertencia: La cantidad (' + cantidad + ' ' + umProduccion + ')' +
+                    ' excede la capacidad disponible del almacén (' + disponible + ' ' + umAlmacen + ')'
+                );
+            }
         }
     });
 
@@ -408,8 +447,17 @@ $(document).ready(function() {
         const almacenCard = $('.almacen-card.selected');
         if (almacenCard.length) {
             const disponible = almacenCard.data('disponible');
-            if (cantidad > disponible) {
-                alert('⚠️ Advertencia: La cantidad (' + cantidad + ') excede la capacidad disponible del almacén (' + disponible + ')');
+            const umProduccion = $('#unidadmedidaid option:selected').data('abrev');
+            const umAlmacen = almacenCard.data('um-almacen');
+
+            const cantidadKg = convertirAKg(cantidad, umProduccion);
+            const disponibleKg = convertirAKg(disponible, umAlmacen);
+
+            if (cantidadKg > disponibleKg) {
+                alert(
+                    '⚠️ Advertencia: La cantidad (' + cantidad + ' ' + umProduccion + ')' +
+                    ' excede la capacidad disponible del almacén (' + disponible + ' ' + umAlmacen + ')'
+                );
             }
         }
     });
