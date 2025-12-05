@@ -37,7 +37,8 @@ class ClimaController extends Controller
     }
 
     /**
-     * Guardar el clima de hoy desde la API (si no existe)
+     * Guardar el clima actual desde la API
+     * Permite múltiples registros al día (máximo 1 cada 4 horas)
      */
     public function guardarClimaHoy()
     {
@@ -45,12 +46,12 @@ class ClimaController extends Controller
             return null;
         }
 
-        // Verificar si ya existe registro de hoy
-        $existeHoy = Clima::whereNull('loteid')
-            ->whereDate('fecha', today())
+        // Verificar si ya existe registro reciente (últimas 4 horas)
+        $existeReciente = Clima::whereNull('loteid')
+            ->where('fecha', '>=', now()->subHours(4))
             ->exists();
 
-        if ($existeHoy) {
+        if ($existeReciente) {
             return null;
         }
 
