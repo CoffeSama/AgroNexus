@@ -36,6 +36,9 @@ use App\Http\Controllers\Web\DashboardController;
 // 🔹 Reportes Controller
 use App\Http\Controllers\Web\ReporteController;
 
+// 🔹 Catálogos Controller
+use App\Http\Controllers\Web\CatalogoController;
+
 // ======================================================
 // RUTAS PÚBLICAS (SIN LOGIN)
 // ======================================================
@@ -61,11 +64,15 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
+    // Catálogos centralizados
+    Route::get('/catalogos', [CatalogoController::class, 'index'])->name('catalogos.index');
+    
     // API endpoints para clima (OpenWeather)
     Route::get('/api/clima', [DashboardController::class, 'getClima'])->name('api.clima');
     Route::get('/api/pronostico', [DashboardController::class, 'getPronostico'])->name('api.pronostico');
 
     Route::get('actividades/calendario', [ActividadController::class, 'calendario'])->name('actividades.calendario');
+    Route::post('actividades/{actividad}/marcar-realizada', [ActividadController::class, 'marcarRealizada'])->name('actividades.marcar-realizada');
     Route::resource('actividades', ActividadController::class)
         ->parameters(['actividades' => 'actividad']);
     Route::get('climas', [ClimaController::class, 'index'])->name('climas.index');

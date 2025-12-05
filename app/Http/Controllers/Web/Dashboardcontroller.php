@@ -22,31 +22,39 @@ class DashboardController extends Controller
         // ESTADÍSTICAS PRINCIPALES (4 small-boxes)
         // ========================================
         $stats = [
-            // Lotes activos (sembrado o en producción)
+            // Lotes activos (todos excepto cosechado y en descanso)
             'lotes_activos' => Lote::whereHas('estadoTipo', function($q) {
-                $q->whereIn('nombre', ['sembrado', 'en producción']);
+                $q->whereNotIn('nombre', ['cosechado', 'en descanso']);
             })->count(),
+            
+            // Si no hay relación, contar todos los lotes
+            'total_lotes' => Lote::count(),
             
             // Producción del mes en KG
             'produccion_mes_kg' => Produccion::whereMonth('fechacosecha', now()->month)
                 ->whereYear('fechacosecha', now()->year)
                 ->sum('cantidad'),
             
-            // Insumos con stock bajo
-            'insumos_stock_bajo' => Insumo::whereRaw('stock <= stockminimo')->count(),
+            // Insumos con stock bajo (manejar NULL en stockminimo)
+            'insumos_stock_bajo' => Insumo::whereRaw('stock <= COALESCE(stockminimo, 10)')->count(),
             
             // Ventas del mes
             'ventas_mes' => Venta::whereMonth('fechaventa', now()->month)
                 ->whereYear('fechaventa', now()->year)
-                ->sum('total'),
+                ->selectRaw('COALESCE(SUM(cantidad * preciounitario), 0) as total')
+                ->value('total') ?? 0,
             
             // Para resumen estadístico
             'hectareas_totales' => Lote::sum('superficie') ?? 0,
             'total_actividades' => Actividad::count(),
             'usuarios' => Usuario::count(),
             'total_insumos' => Insumo::count(),
-            'total_lotes' => Lote::count(),
         ];
+        
+        // Si lotes_activos es 0 pero hay lotes, mostrar total de lotes
+        if ($stats['lotes_activos'] == 0 && $stats['total_lotes'] > 0) {
+            $stats['lotes_activos'] = $stats['total_lotes'];
+        }
 
         // ========================================
         // GRÁFICO: Producción últimos 6 meses por cultivo

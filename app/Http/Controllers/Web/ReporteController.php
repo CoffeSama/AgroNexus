@@ -257,13 +257,19 @@ class ReporteController extends Controller
      */
     public function actividades(Request $request)
     {
-        $fechaDesde = $request->get('fecha_desde', now()->startOfMonth()->toDateString());
+        // Por defecto últimos 30 días para mostrar más datos
+        $fechaDesde = $request->get('fecha_desde', now()->subDays(30)->toDateString());
         $fechaHasta = $request->get('fecha_hasta', now()->toDateString());
         $tipoId = $request->get('tipo_id');
         $loteId = $request->get('lote_id');
 
-        $query = Actividad::with(['lote', 'usuario', 'tipoActividad', 'prioridad'])
-            ->whereBetween('fechainicio', [$fechaDesde, $fechaHasta]);
+        $query = Actividad::with(['lote', 'usuario', 'tipoActividad', 'prioridad']);
+        
+        // Solo aplicar filtro de fechas si hay fechainicio
+        $query->where(function($q) use ($fechaDesde, $fechaHasta) {
+            $q->whereBetween('fechainicio', [$fechaDesde, $fechaHasta])
+              ->orWhereNull('fechainicio');
+        });
 
         if ($tipoId) {
             $query->where('tipoactividadid', $tipoId);
@@ -273,6 +279,15 @@ class ReporteController extends Controller
         }
 
         $actividades = $query->orderBy('fechainicio', 'desc')->get();
+
+        // Si no hay actividades con el filtro, traer todas
+        if ($actividades->isEmpty()) {
+            $actividades = Actividad::with(['lote', 'usuario', 'tipoActividad', 'prioridad'])
+                ->when($tipoId, fn($q) => $q->where('tipoactividadid', $tipoId))
+                ->when($loteId, fn($q) => $q->where('loteid', $loteId))
+                ->orderBy('fechainicio', 'desc')
+                ->get();
+        }
 
         $stats = [
             'total' => $actividades->count(),
@@ -284,15 +299,15 @@ class ReporteController extends Controller
         $actividadesPorTipo = DB::table('actividad')
             ->join('tipoactividad', 'actividad.tipoactividadid', '=', 'tipoactividad.tipoactividadid')
             ->select('tipoactividad.nombre', DB::raw('COUNT(*) as total'))
-            ->whereBetween('actividad.fechainicio', [$fechaDesde, $fechaHasta])
             ->groupBy('tipoactividad.nombre')
             ->orderByDesc('total')
             ->get();
 
-        $actividadesPorDia = Actividad::selectRaw('DATE(fechainicio) as dia, COUNT(*) as total')
+        $actividadesPorDia = Actividad::selectRaw("TO_CHAR(fechainicio, 'DD/MM') as dia, COUNT(*) as total")
+            ->whereNotNull('fechainicio')
             ->whereBetween('fechainicio', [$fechaDesde, $fechaHasta])
-            ->groupBy('dia')
-            ->orderBy('dia')
+            ->groupByRaw("TO_CHAR(fechainicio, 'DD/MM'), DATE(fechainicio)")
+            ->orderByRaw('DATE(fechainicio)')
             ->get();
 
         $tipos = DB::table('tipoactividad')->orderBy('nombre')->get();

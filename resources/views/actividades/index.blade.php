@@ -31,10 +31,59 @@
     .actividad-footer { padding: 12px 20px; background: #f8f9fc; display: flex; justify-content: space-between; align-items: center; }
     .actividad-tipo { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: white; background: #17a2b8; }
     .view-toggle .btn.active { background: #2c5530; color: white; }
+    
+    .btn-realizada {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 6px 15px;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+    .btn-realizada:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
 </style>
 @endpush
 
 @section('content')
+
+{{-- Alertas con SweetAlert2 --}}
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Completado!',
+            html: '{!! session("success") !!}',
+            showConfirmButton: true,
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#28a745',
+            timer: 5000,
+            timerProgressBar: true,
+            showClass: { popup: 'animate__animated animate__fadeInDown' },
+            hideClass: { popup: 'animate__animated animate__fadeOutUp' }
+        });
+    });
+</script>
+@endif
+
+@if(session('error'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            icon: 'error',
+            title: '¡Error!',
+            text: '{!! session("error") !!}',
+            confirmButtonColor: '#dc3545'
+        });
+    });
+</script>
+@endif
+
 <div class="row">
     <div class="col-lg-3 col-6">
         <div class="small-box small-box-green">
@@ -105,10 +154,20 @@
             </div>
             <div class="actividad-footer">
                 <small class="text-muted">@if($act->lote && $act->lote->cultivo)<span class="badge badge-light"><i class="fas fa-seedling mr-1"></i> {{ $act->lote->cultivo->nombre }}</span>@endif</small>
-                <div>
+                <div class="d-flex align-items-center">
+                    @if(!$esCompletada)
+                        <form action="{{ route('actividades.marcar-realizada', $act) }}" method="POST" class="d-inline mr-2 form-realizada">
+                            @csrf
+                            <button type="button" class="btn btn-realizada btn-marcar-realizada" 
+                                    data-tipo="{{ $act->tipoActividad->nombre ?? 'Actividad' }}"
+                                    data-lote="{{ $act->lote->nombre ?? 'Sin lote' }}">
+                                <i class="fas fa-check mr-1"></i> Realizada
+                            </button>
+                        </form>
+                    @endif
                     <a href="{{ route('actividades.show', $act) }}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
                     <a href="{{ route('actividades.edit', $act) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                    <form action="{{ route('actividades.destroy', $act) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar?')">@csrf @method('DELETE')<button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></form>
+                    <form action="{{ route('actividades.destroy', $act) }}" method="POST" class="d-inline form-eliminar">@csrf @method('DELETE')<button type="button" class="btn btn-sm btn-danger btn-eliminar"><i class="fas fa-trash"></i></button></form>
                 </div>
             </div>
         </div>
@@ -120,7 +179,7 @@
 <div id="tableView" style="display: none;">
     <div class="card"><div class="card-body p-0">
         <table class="table table-hover mb-0">
-            <thead class="bg-light"><tr><th>Tipo</th><th>Lote</th><th>Responsable</th><th>Descripción</th><th>Inicio</th><th>Estado</th><th style="width: 130px;">Acciones</th></tr></thead>
+            <thead class="bg-light"><tr><th>Tipo</th><th>Lote</th><th>Responsable</th><th>Descripción</th><th>Inicio</th><th>Estado</th><th style="width: 180px;">Acciones</th></tr></thead>
             <tbody>
                 @forelse($actividades as $act)
                     @php $esCompletada = $act->fechafin !== null; @endphp
@@ -131,7 +190,12 @@
                         <td>{{ Str::limit($act->descripcion ?? '-', 40) }}</td>
                         <td>{{ $act->fechainicio ? \Carbon\Carbon::parse($act->fechainicio)->format('d/m/Y') : '-' }}</td>
                         <td><span class="badge badge-{{ $esCompletada ? 'success' : 'warning' }}">{{ $esCompletada ? 'Completada' : 'Pendiente' }}</span></td>
-                        <td><a href="{{ route('actividades.show', $act) }}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a><a href="{{ route('actividades.edit', $act) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a><form action="{{ route('actividades.destroy', $act) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar?')">@csrf @method('DELETE')<button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></form></td>
+                        <td>
+                            @if(!$esCompletada)
+                                <form action="{{ route('actividades.marcar-realizada', $act) }}" method="POST" class="d-inline form-realizada">@csrf<button type="button" class="btn btn-sm btn-success btn-marcar-realizada" data-tipo="{{ $act->tipoActividad->nombre ?? 'Actividad' }}" data-lote="{{ $act->lote->nombre ?? '' }}"><i class="fas fa-check"></i></button></form>
+                            @endif
+                            <a href="{{ route('actividades.show', $act) }}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a><a href="{{ route('actividades.edit', $act) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a><form action="{{ route('actividades.destroy', $act) }}" method="POST" class="d-inline form-eliminar">@csrf @method('DELETE')<button type="button" class="btn btn-sm btn-danger btn-eliminar"><i class="fas fa-trash"></i></button></form>
+                        </td>
                     </tr>
                 @empty
                     <tr><td colspan="7" class="text-center py-4">No hay actividades</td></tr>
@@ -145,10 +209,75 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(function() {
     $('#btnCardView').on('click', function() { $(this).addClass('active').siblings().removeClass('active'); $('#cardView').show(); $('#tableView').hide(); });
     $('#btnTableView').on('click', function() { $(this).addClass('active').siblings().removeClass('active'); $('#tableView').show(); $('#cardView').hide(); });
+
+    // SweetAlert para marcar como realizada
+    $(document).on('click', '.btn-marcar-realizada', function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        var tipo = $(this).data('tipo');
+        var lote = $(this).data('lote');
+        
+        Swal.fire({
+            title: '¿Marcar como realizada?',
+            html: `
+                <div style="text-align: center;">
+                    <i class="fas fa-clipboard-check fa-4x text-success mb-3"></i>
+                    <p class="mb-2">Vas a completar la actividad:</p>
+                    <p><strong class="text-primary" style="font-size: 1.2rem;">${tipo}</strong></p>
+                    <p class="text-muted">Lote: <strong>${lote}</strong></p>
+                    <hr>
+                    <small class="text-info"><i class="fas fa-info-circle mr-1"></i>El estado del lote se actualizará automáticamente</small>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-check mr-1"></i> Sí, marcar realizada',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Cancelar',
+            reverseButtons: true,
+            customClass: {
+                popup: 'animated fadeInDown'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    html: '<i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Actualizando actividad y estado del lote</p>',
+                    allowOutsideClick: false,
+                    showConfirmButton: false
+                });
+                form.submit();
+            }
+        });
+    });
+
+    // SweetAlert para eliminar
+    $(document).on('click', '.btn-eliminar', function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        
+        Swal.fire({
+            title: '¿Eliminar actividad?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
 });
 </script>
 @endpush

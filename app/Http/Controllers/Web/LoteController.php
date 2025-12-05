@@ -11,7 +11,7 @@ use App\Models\Produccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use App\Services\SupabaseStorage;
+// use App\Services\SupabaseStorage; // COMENTADO TEMPORALMENTE
 
 class LoteController extends Controller
 {
@@ -117,7 +117,7 @@ class LoteController extends Controller
         return view('lotes.create', compact('usuarios', 'cultivos', 'estados'));
     }
 
-    public function store(Request $request, SupabaseStorage $storage)
+    public function store(Request $request)
     {
         $data = $request->validate([
             'usuarioid' => 'required|exists:usuario,usuarioid',
@@ -132,21 +132,12 @@ class LoteController extends Controller
             'imagen' => 'nullable|image',
         ]);
 
-        // SUBIR IMAGEN A SUPABASE
+        // GUARDAR IMAGEN LOCALMENTE
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
-
-            $filename = 'lotes/' . uniqid('lote_') . '.' . $file->getClientOriginalExtension();
-
-            // subir
-            $storage->upload(
-                $filename,
-                file_get_contents($file),
-                $file->getMimeType()
-            );
-
-            // asignar URL pública
-            $data['imagenurl'] = $storage->getPublicUrl($filename);
+            $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('lotes', $filename, 'public');
+            $data['imagenurl'] = '/storage/' . $path;
         }
 
         unset($data['imagen']);
@@ -278,7 +269,7 @@ class LoteController extends Controller
         return view('lotes.edit', compact('lote', 'usuarios', 'cultivos', 'estados'));
     }
 
-    public function update(Request $request, Lote $lote, SupabaseStorage $storage)
+    public function update(Request $request, Lote $lote)
     {
         $data = $request->validate([
             'usuarioid' => 'required|exists:usuario,usuarioid',
@@ -295,30 +286,17 @@ class LoteController extends Controller
 
         // ¿Se subió una nueva imagen?
         if ($request->hasFile('imagen')) {
-
-            // ELIMINAR IMAGEN ANTERIOR EN SUPABASE (si existe)
+            // ELIMINAR IMAGEN ANTERIOR (si existe)
             if ($lote->imagenurl) {
-                // Extraer el path dentro del bucket
-                $path = str_replace(
-                    env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/',
-                    '',
-                    $lote->imagenurl
-                );
-
-                $storage->delete($path);
+                $oldPath = str_replace('/storage/', '', $lote->imagenurl);
+                Storage::disk('public')->delete($oldPath);
             }
 
-            // Subir nueva imagen
+            // Subir nueva imagen localmente
             $file = $request->file('imagen');
-            $filename = 'lotes/' . uniqid('lote_') . '.' . $file->getClientOriginalExtension();
-
-            $storage->upload(
-                $filename,
-                file_get_contents($file),
-                $file->getMimeType()
-            );
-
-            $data['imagenurl'] = $storage->getPublicUrl($filename);
+            $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('lotes', $filename, 'public');
+            $data['imagenurl'] = '/storage/' . $path;
         }
 
         unset($data['imagen']);
@@ -328,17 +306,12 @@ class LoteController extends Controller
         return redirect()->route('lotes.index')->with('success', 'Lote actualizado.');
     }
 
-    public function destroy(Lote $lote, SupabaseStorage $storage)
+    public function destroy(Lote $lote)
     {
-        // ELIMINAR IMAGEN EN SUPABASE
+        // ELIMINAR IMAGEN LOCAL
         if ($lote->imagenurl) {
-            $path = str_replace(
-                env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/',
-                '',
-                $lote->imagenurl
-            );
-
-            $storage->delete($path);
+            $path = str_replace('/storage/', '', $lote->imagenurl);
+            Storage::disk('public')->delete($path);
         }
 
         $lote->delete();

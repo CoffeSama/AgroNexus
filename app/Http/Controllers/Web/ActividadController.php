@@ -8,7 +8,10 @@ use App\Models\Lote;
 use App\Models\TipoActividad;
 use App\Models\Prioridad;
 use App\Models\Usuario;
+use App\Models\EstadoLoteTipo;
+use App\Models\HistorialEstadoLote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ActividadController extends Controller
 {
@@ -176,5 +179,83 @@ class ActividadController extends Controller
         $actividad->delete();
 
         return redirect()->route('actividades.index')->with('success', 'Actividad eliminada.');
+    }
+
+    /**
+     * Marcar actividad como realizada y cambiar estado del lote según tipo
+     */
+    public function marcarRealizada(Actividad $actividad)
+    {
+        DB::beginTransaction();
+
+        try {
+            $actividad->load(['lote', 'tipoActividad']);
+            $lote = $actividad->lote;
+            $tipoActividad = strtolower(trim($actividad->tipoActividad->nombre ?? ''));
+
+            // Marcar la actividad como realizada (fecha fin = hoy)
+            $actividad->fechafin = now();
+            $actividad->save();
+
+            // Mapeo de tipo de actividad -> nuevo estado del lote
+            $nombreEstado = $this->obtenerNuevoEstado($tipoActividad);
+            $mensajeEstado = '';
+
+            if ($nombreEstado && $lote) {
+                // Buscar estado exacto (case insensitive)
+                $nuevoEstado = EstadoLoteTipo::whereRaw('LOWER(nombre) = ?', [strtolower($nombreEstado)])->first();
+
+                if ($nuevoEstado) {
+                    // Actualizar estado del lote
+                    $lote->estadolotetipoid = $nuevoEstado->estadolotetipoid;
+                    $lote->fechamodificacion = now();
+                    $lote->save();
+
+                    // Registrar en historial
+                    HistorialEstadoLote::create([
+                        'loteid' => $lote->loteid,
+                        'estadolotetipoid' => $nuevoEstado->estadolotetipoid,
+                        'fecha_cambio' => now(),
+                        'observaciones' => "Actividad '{$actividad->tipoActividad->nombre}' completada",
+                        'usuarioid' => $lote->usuarioid,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    $mensajeEstado = " El lote '{$lote->nombre}' cambió a estado '{$nuevoEstado->nombre}'.";
+                }
+            }
+
+            DB::commit();
+
+            return back()->with('success', "Actividad marcada como realizada.{$mensajeEstado}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtener el nuevo estado del lote según el tipo de actividad
+     * 
+     * Tipos de actividad: siembra, riego, fumigación, cosecha, labranza
+     * Estados disponibles: disponible, en preparación, sembrado, en producción, cosechado, en descanso
+     */
+    private function obtenerNuevoEstado($tipoActividad)
+    {
+        $tipoActividad = strtolower(trim($tipoActividad));
+
+        // Mapeo EXACTO de actividades a estados
+        $mapeo = [
+            'labranza' => 'en preparación',
+            'siembra' => 'sembrado',
+            'riego' => 'en producción',
+            'fumigación' => 'en producción',
+            'fumigacion' => 'en producción',
+            'cosecha' => 'cosechado',
+        ];
+
+        return $mapeo[$tipoActividad] ?? null;
     }
 }
