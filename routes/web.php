@@ -140,6 +140,15 @@ Route::middleware('auth')->group(function () {
     });
 
     // ==============================
+    // ENVÍOS
+    // ==============================
+    Route::prefix('envios')->name('envios.')->group(function () {
+        Route::get('/mandar', fn() => view('envios.mandar-envio'))->name('mandar');
+        Route::get('/seguimiento', fn() => view('envios.seguimiento'))->name('seguimiento');
+        Route::get('/{id}', fn($id) => view('envios.detalle', ['id' => $id]))->name('detalle');
+    });
+
+    // ==============================
     // TRANSACCIONES AGRÍCOLAS
     // ==============================
     Route::prefix('transacciones')->name('transacciones.')->group(function () {

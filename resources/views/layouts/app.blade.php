@@ -430,6 +430,33 @@
                         </ul>
                     </li>
 
+                    {{-- ENVÍOS --}}
+                    <li class="nav-item {{ request()->routeIs('envios.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('envios.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-truck"></i>
+                            <p>
+                                Envíos
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('envios.mandar') }}"
+                                   class="nav-link {{ request()->routeIs('envios.mandar') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Mandar Envío</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('envios.seguimiento') }}"
+                                   class="nav-link {{ request()->routeIs('envios.seguimiento') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Seguimiento Envío</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     {{-- CATÁLOGOS --}}
                     <li class="nav-item {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'active' : '' }}">
