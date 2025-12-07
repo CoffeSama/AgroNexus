@@ -16,8 +16,11 @@
 <style>
     .wizard-step { display: none; }
     .wizard-step.active { display: block; }
-    #map { height: 450px; }
+    #map { height: 100%; }
     .readonly-input { background-color: #f4f6f9; cursor: not-allowed; }
+    .equal-height-row { display: flex; flex-wrap: wrap; }
+    .equal-height-row > [class*='col-'] { display: flex; flex-direction: column; }
+    .equal-height-row .card { flex: 1; }
 </style>
 
 <!-- Alert informativo -->
@@ -61,7 +64,7 @@
     
     <!-- STEP 1: UBICACIÓN -->
     <div class="wizard-step active" data-step="1">
-        <div class="row">
+        <div class="row equal-height-row">
             <!-- Formulario -->
             <div class="col-md-4">
                 <div class="card card-primary">
@@ -110,8 +113,8 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div id="map"></div>
+                    <div class="card-body p-0" style="flex: 1; display: flex;">
+                        <div id="map" style="width: 100%;"></div>
                     </div>
                 </div>
             </div>
