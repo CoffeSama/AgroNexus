@@ -39,6 +39,9 @@ use App\Http\Controllers\Web\ReporteController;
 // 🔹 Catálogos Controller
 use App\Http\Controllers\Web\CatalogoController;
 
+// 🔹 External API Proxy Controller
+use App\Http\Controllers\Web\ExternalApiProxyController;
+
 // ======================================================
 // RUTAS PÚBLICAS (SIN LOGIN)
 // ======================================================
@@ -63,10 +66,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Catálogos centralizados
     Route::get('/catalogos', [CatalogoController::class, 'index'])->name('catalogos.index');
-    
+
     // API endpoints para clima (OpenWeather)
     Route::get('/api/clima', [DashboardController::class, 'getClima'])->name('api.clima');
     Route::get('/api/pronostico', [DashboardController::class, 'getPronostico'])->name('api.pronostico');
@@ -145,7 +148,25 @@ Route::middleware('auth')->group(function () {
     Route::prefix('envios')->name('envios.')->group(function () {
         Route::get('/mandar', fn() => view('envios.mandar-envio'))->name('mandar');
         Route::get('/seguimiento', fn() => view('envios.seguimiento'))->name('seguimiento');
-        Route::get('/{id}', fn($id) => view('envios.detalle', ['id' => $id]))->name('detalle');
+        Route::get('/{id}', fn($id) => view('envios.detalle', ['id' => $id]))->name('detalle')->where('id', '[0-9]+');
+
+        // ==============================
+        // PROXY API EXTERNA (evita CORS)
+        // ==============================
+        Route::prefix('api')->name('api.')->group(function () {
+            // Catálogos
+            Route::get('/catalogo-categorias', [ExternalApiProxyController::class, 'getCategorias'])->name('categorias');
+            Route::get('/catalogo-productos', [ExternalApiProxyController::class, 'getProductos'])->name('productos');
+            Route::get('/catalogo-tipos-empaque', [ExternalApiProxyController::class, 'getTiposEmpaque'])->name('tipos-empaque');
+            Route::get('/catalogo-tamano-conteo', [ExternalApiProxyController::class, 'getTamanoConteo'])->name('tamano-conteo');
+            Route::get('/tipo-transporte', [ExternalApiProxyController::class, 'getTiposTransporte'])->name('tipos-transporte');
+
+            // Envíos
+            Route::post('/direccion', [ExternalApiProxyController::class, 'crearDireccion'])->name('direccion');
+            Route::post('/crear-envio', [ExternalApiProxyController::class, 'crearEnvioProductor'])->name('crear-envio');
+            Route::get('/envios', [ExternalApiProxyController::class, 'getEnvios'])->name('envios');
+            Route::get('/envios/{id}', [ExternalApiProxyController::class, 'getEnvioDetalle'])->name('envio-detalle');
+        });
     });
 
     // ==============================
