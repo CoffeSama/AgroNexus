@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $table = 'usuario';
     protected $primaryKey = 'usuarioid';
@@ -32,11 +33,6 @@ class Usuario extends Authenticatable
 
     protected $hidden = [
         'passwordhash',
-        'roles',
-        'lotes',
-        'actividades',
-        'loteInsumos',
-        'historialEstadosLote',
     ];
 
     protected $casts = [
@@ -49,7 +45,6 @@ class Usuario extends Authenticatable
 
     public function getAuthPassword(){ return $this->passwordhash; }
 
-    public function roles(){ return $this->belongsToMany(Rol::class,'usuariorol','usuarioid','rolid'); }
     public function lotes(){ return $this->hasMany(Lote::class,'usuarioid','usuarioid'); }
     public function actividades(){ return $this->hasMany(Actividad::class,'usuarioid','usuarioid'); }
     public function loteInsumos(){ return $this->hasMany(LoteInsumo::class,'usuarioid','usuarioid'); }

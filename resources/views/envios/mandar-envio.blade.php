@@ -21,13 +21,76 @@
     .equal-height-row { display: flex; flex-wrap: wrap; }
     .equal-height-row > [class*='col-'] { display: flex; flex-direction: column; }
     .equal-height-row .card { flex: 1; }
+    
+    /* Estilos del indicador de conexión */
+    #conexion-indicator {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .indicador-online {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .indicador-offline {
+        background: linear-gradient(135deg, #dc3545, #e74a3b);
+        color: white;
+        animation: pulse-offline 2s infinite;
+    }
+    
+    @keyframes pulse-offline {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .cola-pendientes-card {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
 </style>
+
+<!-- Indicador de conexión -->
+<div id="conexion-indicator" class="indicador-online">
+    <i class="fas fa-wifi"></i>
+    <span id="conexion-texto">Verificando conexión...</span>
+    <span class="badge badge-light ml-2" id="pendientes-badge" style="display: none;">0 pendientes</span>
+</div>
+
+<!-- Alert de cola local si hay pendientes -->
+<div id="cola-alert" class="cola-pendientes-card" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-clock text-warning mr-2"></i>
+            <strong>Tienes envíos en cola local</strong>
+            <p class="mb-0 small text-muted">Se sincronizarán automáticamente cuando la conexión esté disponible</p>
+        </div>
+        <button class="btn btn-warning btn-sm" onclick="ToleranciaFallos.sincronizarPendientes()">
+            <i class="fas fa-sync-alt"></i> Sincronizar Ahora
+        </button>
+    </div>
+</div>
 
 <!-- Alert informativo -->
 <div class="alert alert-info alert-dismissible fade show">
     <button type="button" class="close" data-dismiss="alert">&times;</button>
     <h5><i class="icon fas fa-info-circle"></i> ¡Bienvenido!</h5>
     Crea tu solicitud de envío en 3 simples pasos: <strong>Ubicación</strong>, <strong>Detalles del envío</strong> y <strong>Confirmación</strong>.
+    <br><small class="text-muted"><i class="fas fa-shield-alt"></i> Sistema con tolerancia a fallos: tus envíos se guardarán localmente si no hay conexión.</small>
 </div>
 
 <!-- Progress Steps usando BS4 -->
@@ -237,6 +300,9 @@
                 <select class="form-control js-tipo-transporte" required>
                     <option value="">Seleccione...</option>
                 </select>
+                <small class="text-muted js-transporte-offline" style="display: none;">
+                    <i class="fas fa-info-circle"></i> Tipos de transporte cargados desde cache local
+                </small>
             </div>
             <div class="row">
                 <div class="col-md-4">
@@ -325,10 +391,161 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    const API_URL = 'http://192.168.0.11:8000';
+    // URL de la API - Configurable desde .env
+    const API_URL = '{{ env("ORGTRACK_API_URL", "http://192.168.0.11:8000") }}';
     const ORS_KEY = '5b3ce3597851110001cf6248dbff311ed4d34185911c2eb9e6c50080';
 
+    // ========================================
+    // SISTEMA DE TOLERANCIA A FALLOS
+    // ========================================
+    const ToleranciaFallos = {
+        conectado: true,
+        ultimaVerificacion: null,
+        colaLocal: [],
+
+        init: function() {
+            this.cargarColaLocal();
+            this.verificarConexion();
+            setInterval(() => this.verificarConexion(), 30000);
+        },
+
+        verificarConexion: async function() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(`${API_URL}/api/tipo-transporte`, {
+                    method: 'GET',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                this.conectado = response.ok;
+                
+                if (this.conectado && this.colaLocal.length > 0) {
+                    this.sincronizarPendientes();
+                }
+            } catch (error) {
+                console.warn('API no disponible:', error.message);
+                this.conectado = false;
+            }
+            
+            this.actualizarIndicador();
+            return this.conectado;
+        },
+
+        actualizarIndicador: function() {
+            const indicator = document.getElementById('conexion-indicator');
+            const texto = document.getElementById('conexion-texto');
+            const badge = document.getElementById('pendientes-badge');
+            const colaAlert = document.getElementById('cola-alert');
+            
+            if (this.conectado) {
+                indicator.className = 'indicador-online';
+                indicator.querySelector('i').className = 'fas fa-wifi';
+                texto.textContent = 'Conectado';
+            } else {
+                indicator.className = 'indicador-offline';
+                indicator.querySelector('i').className = 'fas fa-wifi-slash';
+                texto.textContent = 'Sin Conexión - Modo Offline';
+            }
+            
+            if (this.colaLocal.length > 0) {
+                badge.style.display = 'inline';
+                badge.textContent = `${this.colaLocal.length} pendientes`;
+                colaAlert.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+                colaAlert.style.display = 'none';
+            }
+        },
+
+        guardarEnCola: function(datos) {
+            const envio = {
+                id: Date.now(),
+                datos: datos,
+                fecha: new Date().toISOString(),
+                intentos: 0,
+                estado: 'pendiente'
+            };
+            
+            this.colaLocal.push(envio);
+            localStorage.setItem('agronexus_envios_pendientes', JSON.stringify(this.colaLocal));
+            this.actualizarIndicador();
+            
+            return envio;
+        },
+
+        cargarColaLocal: function() {
+            try {
+                const stored = localStorage.getItem('agronexus_envios_pendientes');
+                this.colaLocal = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                this.colaLocal = [];
+            }
+        },
+
+        sincronizarPendientes: async function() {
+            if (!this.conectado || this.colaLocal.length === 0) return;
+
+            Swal.fire({
+                title: 'Sincronizando...',
+                text: `Procesando ${this.colaLocal.length} envío(s) pendiente(s)`,
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            let sincronizados = 0;
+            const pendientes = [...this.colaLocal];
+
+            for (const envio of pendientes) {
+                if (envio.estado === 'enviado') continue;
+                
+                try {
+                    const resDireccion = await fetch(`${API_URL}/api/public/direccion`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(envio.datos.direccion)
+                    });
+
+                    if (!resDireccion.ok) continue;
+
+                    const { id_direccion } = await resDireccion.json();
+                    envio.datos.envio.id_direccion = id_direccion;
+
+                    const resEnvio = await fetch(`${API_URL}/api/public/envios`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(envio.datos.envio)
+                    });
+
+                    if (resEnvio.ok) {
+                        envio.estado = 'enviado';
+                        sincronizados++;
+                    }
+                } catch (error) {
+                    console.error('Error sincronizando:', error);
+                }
+            }
+
+            this.colaLocal = this.colaLocal.filter(e => e.estado !== 'enviado');
+            localStorage.setItem('agronexus_envios_pendientes', JSON.stringify(this.colaLocal));
+            this.actualizarIndicador();
+
+            Swal.fire({
+                icon: sincronizados > 0 ? 'success' : 'warning',
+                title: sincronizados > 0 ? '¡Sincronización exitosa!' : 'Sin cambios',
+                text: `${sincronizados} envío(s) sincronizado(s)`,
+                timer: 3000
+            });
+        }
+    };
+
+    // ========================================
+    // ESTADO Y VARIABLES GLOBALES
+    // ========================================
     const state = {
         currentStep: 1,
         map: null,
@@ -342,7 +559,11 @@
 
     let partitionCounter = 0;
 
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
     document.addEventListener('DOMContentLoaded', async () => {
+        ToleranciaFallos.init();
         initMap();
         await loadTiposTransporte();
         addPartition();
@@ -365,6 +586,9 @@
         document.getElementById('btnAgregarParticion').addEventListener('click', addPartition);
     }
 
+    // ========================================
+    // MAPA
+    // ========================================
     function initMap() {
         state.map = L.map('map').setView([-17.3935, -66.1570], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -467,16 +691,36 @@
         document.getElementById('txtNombreDestino').value = '';
     }
 
+    // ========================================
+    // TIPOS DE TRANSPORTE (con cache local)
+    // ========================================
     async function loadTiposTransporte() {
+        // Intentar cargar desde cache primero
+        const cached = localStorage.getItem('tipos_transporte_cache');
+        if (cached) {
+            state.tiposTransporte = JSON.parse(cached);
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/tipo-transporte`);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            state.tiposTransporte = await res.json();
+            if (res.ok) {
+                state.tiposTransporte = await res.json();
+                // Guardar en cache
+                localStorage.setItem('tipos_transporte_cache', JSON.stringify(state.tiposTransporte));
+            }
         } catch (e) {
-            console.error('Error cargando tipos de transporte:', e);
+            console.warn('Error cargando tipos de transporte, usando cache:', e);
+        }
+
+        // Si no hay datos, mostrar mensaje
+        if (state.tiposTransporte.length === 0) {
+            console.warn('No hay tipos de transporte disponibles');
         }
     }
 
+    // ========================================
+    // PARTICIONES
+    // ========================================
     function addPartition() {
         partitionCounter++;
         const template = document.getElementById('tplParticion');
@@ -486,12 +730,19 @@
         card.querySelector('.num').textContent = partitionCounter;
 
         const select = clone.querySelector('.js-tipo-transporte');
+        const offlineMsg = clone.querySelector('.js-transporte-offline');
+        
         state.tiposTransporte.forEach(tipo => {
             const option = document.createElement('option');
             option.value = tipo.id;
             option.textContent = tipo.nombre;
             select.appendChild(option);
         });
+
+        // Mostrar mensaje si estamos en modo offline
+        if (!ToleranciaFallos.conectado && state.tiposTransporte.length > 0) {
+            offlineMsg.style.display = 'block';
+        }
 
         const today = new Date().toISOString().split('T')[0];
         clone.querySelector('.js-fecha-recogida').value = today;
@@ -525,6 +776,9 @@
         btn.closest('.carga-item').remove();
     }
 
+    // ========================================
+    // NAVEGACIÓN WIZARD
+    // ========================================
     function nextStep() {
         if (validateCurrentStep()) {
             goToStep(state.currentStep + 1);
@@ -539,7 +793,6 @@
         document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
         document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
 
-        // Actualizar indicadores
         document.querySelectorAll('.step-indicator').forEach(ind => {
             const badge = ind.querySelector('.step-badge');
             const stepNum = parseInt(ind.dataset.step);
@@ -584,11 +837,11 @@
             const nombre = document.getElementById('nombre_remitente').value.trim();
             const telefono = document.getElementById('telefono_remitente').value.trim();
             if (!nombre || !telefono) {
-                alert('Por favor completa tu nombre y teléfono.');
+                Swal.fire('Campos requeridos', 'Por favor completa tu nombre y teléfono.', 'warning');
                 return false;
             }
             if (!state.markers.origin || !state.markers.destination) {
-                alert('Por favor marca el origen y destino en el mapa.');
+                Swal.fire('Ubicación requerida', 'Por favor marca el origen y destino en el mapa.', 'warning');
                 return false;
             }
             return true;
@@ -597,7 +850,7 @@
         if (state.currentStep === 2) {
             const cards = document.querySelectorAll('#particionesContainer .card');
             if (cards.length === 0) {
-                alert('Debes agregar al menos un envío/camión.');
+                Swal.fire('Sin envíos', 'Debes agregar al menos un envío/camión.', 'warning');
                 return false;
             }
             let isValid = true;
@@ -613,11 +866,11 @@
                 });
                 const cargas = card.querySelectorAll('.carga-item');
                 if (cargas.length === 0) {
-                    alert(`El envío #${idx + 1} debe tener al menos un producto/carga.`);
+                    Swal.fire('Sin productos', `El envío #${idx + 1} debe tener al menos un producto/carga.`, 'warning');
                     isValid = false;
                 }
             });
-            if (!isValid) alert('Por favor completa todos los campos obligatorios.');
+            if (!isValid) Swal.fire('Campos incompletos', 'Por favor completa todos los campos obligatorios.', 'warning');
             return isValid;
         }
 
@@ -658,7 +911,7 @@
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-sm-4">Tipo de Transporte:</dt>
-                            <dd class="col-sm-8">${tipoTransporte.selectedOptions[0].text}</dd>
+                            <dd class="col-sm-8">${tipoTransporte.selectedOptions[0]?.text || 'No seleccionado'}</dd>
                             <dt class="col-sm-4">Fecha Recogida:</dt>
                             <dd class="col-sm-8">${fecha}</dd>
                             <dt class="col-sm-4">Hora Recogida:</dt>
@@ -674,105 +927,144 @@
         });
     }
 
+    // ========================================
+    // ENVÍO CON TOLERANCIA A FALLOS
+    // ========================================
     async function submitForm() {
         const alertContainer = document.getElementById('alertContainer');
-        alertContainer.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Creando envío...</div>';
+        
+        // Preparar datos de dirección
+        const direccionData = {
+            nombreorigen: document.getElementById('txtNombreOrigen').value,
+            nombredestino: document.getElementById('txtNombreDestino').value,
+            origen_lat: state.originCoords.lat,
+            origen_lng: state.originCoords.lng,
+            destino_lat: state.destinationCoords.lat,
+            destino_lng: state.destinationCoords.lng,
+            rutageojson: state.geoJSON
+        };
 
-        try {
-            const direccionData = {
-                nombreorigen: document.getElementById('txtNombreOrigen').value,
-                nombredestino: document.getElementById('txtNombreDestino').value,
-                origen_lat: state.originCoords.lat,
-                origen_lng: state.originCoords.lng,
-                destino_lat: state.destinationCoords.lat,
-                destino_lng: state.destinationCoords.lng,
-                rutageojson: state.geoJSON
-            };
-
-            const resDireccion = await fetch(`${API_URL}/api/public/direccion`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(direccionData)
-            });
-
-            if (!resDireccion.ok) throw new Error('Error creando dirección');
-            const { id_direccion } = await resDireccion.json();
-
-            const particiones = [];
-            document.querySelectorAll('#particionesContainer .card').forEach(card => {
-                const cargas = [];
-                card.querySelectorAll('.carga-item').forEach(carga => {
-                    cargas.push({
-                        tipo: carga.querySelector('.js-carga-tipo').value,
-                        variedad: carga.querySelector('.js-carga-variedad').value,
-                        cantidad: parseFloat(carga.querySelector('.js-carga-cantidad').value),
-                        peso: parseFloat(carga.querySelector('.js-carga-peso').value),
-                        empaquetado: carga.querySelector('.js-carga-empaque').value
-                    });
-                });
-
-                particiones.push({
-                    id_tipo_transporte: parseInt(card.querySelector('.js-tipo-transporte').value),
-                    cargas: cargas,
-                    recogidaEntrega: {
-                        fecha_recogida: card.querySelector('.js-fecha-recogida').value,
-                        hora_recogida: card.querySelector('.js-hora-recogida').value,
-                        hora_entrega: card.querySelector('.js-hora-entrega').value,
-                        instrucciones_recogida: card.querySelector('.js-instr-recogida').value || null,
-                        instrucciones_entrega: card.querySelector('.js-instr-entrega').value || null
-                    }
+        // Preparar particiones
+        const particiones = [];
+        document.querySelectorAll('#particionesContainer .card').forEach(card => {
+            const cargas = [];
+            card.querySelectorAll('.carga-item').forEach(carga => {
+                cargas.push({
+                    tipo: carga.querySelector('.js-carga-tipo').value,
+                    variedad: carga.querySelector('.js-carga-variedad').value,
+                    cantidad: parseFloat(carga.querySelector('.js-carga-cantidad').value),
+                    peso: parseFloat(carga.querySelector('.js-carga-peso').value),
+                    empaquetado: carga.querySelector('.js-carga-empaque').value
                 });
             });
 
-            const envioData = {
-                nombre_remitente: document.getElementById('nombre_remitente').value,
-                telefono_remitente: document.getElementById('telefono_remitente').value,
-                email_remitente: document.getElementById('email_remitente').value || null,
-                id_direccion: id_direccion,
-                particiones: particiones
-            };
-
-            const resEnvio = await fetch(`${API_URL}/api/public/envios`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(envioData)
+            particiones.push({
+                id_tipo_transporte: parseInt(card.querySelector('.js-tipo-transporte').value),
+                cargas: cargas,
+                recogidaEntrega: {
+                    fecha_recogida: card.querySelector('.js-fecha-recogida').value,
+                    hora_recogida: card.querySelector('.js-hora-recogida').value,
+                    hora_entrega: card.querySelector('.js-hora-entrega').value,
+                    instrucciones_recogida: card.querySelector('.js-instr-recogida').value || null,
+                    instrucciones_entrega: card.querySelector('.js-instr-entrega').value || null
+                }
             });
+        });
 
-            const contentType = resEnvio.headers.get('content-type');
-            let result;
-            
-            if (contentType && contentType.includes('application/json')) {
-                result = await resEnvio.json();
-            } else {
-                const text = await resEnvio.text();
-                console.error('Respuesta no JSON:', text);
-                throw new Error('El servidor devolvió una respuesta inválida.');
+        const envioData = {
+            nombre_remitente: document.getElementById('nombre_remitente').value,
+            telefono_remitente: document.getElementById('telefono_remitente').value,
+            email_remitente: document.getElementById('email_remitente').value || null,
+            particiones: particiones
+        };
+
+        // ========================================
+        // INTENTAR ENVIAR O GUARDAR EN COLA
+        // ========================================
+        if (ToleranciaFallos.conectado) {
+            alertContainer.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Creando envío...</div>';
+
+            try {
+                // Crear dirección
+                const resDireccion = await fetch(`${API_URL}/api/public/direccion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(direccionData)
+                });
+
+                if (!resDireccion.ok) throw new Error('Error creando dirección');
+                const { id_direccion } = await resDireccion.json();
+
+                // Crear envío
+                envioData.id_direccion = id_direccion;
+                const resEnvio = await fetch(`${API_URL}/api/public/envios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(envioData)
+                });
+
+                const contentType = resEnvio.headers.get('content-type');
+                let result;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result = await resEnvio.json();
+                } else {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+
+                if (resEnvio.ok) {
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-success alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            <h5><i class="icon fas fa-check"></i> ¡Envío creado exitosamente!</h5>
+                            ID del Envío: <strong>#${result.id_envio}</strong><br>
+                            Tu solicitud ha sido registrada en el servidor.
+                        </div>
+                    `;
+                    document.getElementById('btnFinish').disabled = true;
+                    document.getElementById('btnFinish').innerHTML = '<i class="fas fa-check"></i> Envío Creado';
+                    return;
+                } else {
+                    throw new Error(result.error || result.message || 'Error desconocido');
+                }
+
+            } catch (error) {
+                console.error('Error al enviar, guardando en cola local:', error);
+                ToleranciaFallos.conectado = false;
+                ToleranciaFallos.actualizarIndicador();
             }
-
-            if (resEnvio.ok) {
-                alertContainer.innerHTML = `
-                    <div class="alert alert-success alert-dismissible">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        <h5><i class="icon fas fa-check"></i> ¡Envío creado exitosamente!</h5>
-                        ID del Envío: <strong>#${result.id_envio}</strong><br>
-                        Tu solicitud ha sido registrada.
-                    </div>
-                `;
-                document.getElementById('btnFinish').disabled = true;
-                document.getElementById('btnFinish').innerHTML = '<i class="fas fa-check"></i> Envío Creado';
-            } else {
-                throw new Error(result.error || result.message || 'Error desconocido');
-            }
-
-        } catch (error) {
-            alertContainer.innerHTML = `
-                <div class="alert alert-danger alert-dismissible">
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                    <h5><i class="icon fas fa-ban"></i> Error al crear el envío</h5>
-                    ${error.message}
-                </div>
-            `;
         }
+
+        // ========================================
+        // MODO OFFLINE - GUARDAR EN COLA LOCAL
+        // ========================================
+        const envioLocal = ToleranciaFallos.guardarEnCola({
+            direccion: direccionData,
+            envio: envioData
+        });
+
+        alertContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h5><i class="icon fas fa-cloud-upload-alt"></i> Envío guardado localmente</h5>
+                <strong>Sin conexión con el servidor.</strong><br>
+                Tu envío ha sido guardado con ID local: <strong>#${envioLocal.id}</strong><br>
+                <small>Se sincronizará automáticamente cuando la conexión esté disponible.</small>
+            </div>
+        `;
+        
+        document.getElementById('btnFinish').disabled = true;
+        document.getElementById('btnFinish').innerHTML = '<i class="fas fa-cloud"></i> Guardado Localmente';
+        
+        Swal.fire({
+            icon: 'info',
+            title: 'Modo Offline',
+            html: `
+                <p>Tu envío se ha guardado localmente porque no hay conexión con el servidor.</p>
+                <p><strong>Se sincronizará automáticamente</strong> cuando la conexión esté disponible.</p>
+            `,
+            confirmButtonText: 'Entendido'
+        });
     }
 </script>
 @endpush

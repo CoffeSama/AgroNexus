@@ -28,8 +28,7 @@ class ClimaController extends Controller
         $this->guardarClimaHoy();
 
         // Obtener historial de los últimos 30 días
-        $historial = Clima::whereNull('loteid')
-            ->where('fecha', '>=', now()->subDays(30))
+        $historial = Clima::where('fecha', '>=', now()->subDays(30))
             ->orderBy('fecha', 'desc')
             ->get();
 
@@ -47,8 +46,7 @@ class ClimaController extends Controller
         }
 
         // Verificar si ya existe registro reciente (últimas 4 horas)
-        $existeReciente = Clima::whereNull('loteid')
-            ->where('fecha', '>=', now()->subHours(4))
+        $existeReciente = Clima::where('fecha', '>=', now()->subHours(4))
             ->exists();
 
         if ($existeReciente) {
@@ -65,18 +63,19 @@ class ClimaController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
+                $loteId = \App\Models\Lote::first()->loteid ?? 1;
 
                 return Clima::create([
-                    'loteid' => null,
+                    'loteid' => $loteId,
                     'fecha' => now(),
                     'temperatura' => round($data['main']['temp'], 1),
                     'humedad' => $data['main']['humidity'],
                     'lluvia' => $data['rain']['1h'] ?? $data['rain']['3h'] ?? 0,
-                    'viento' => round($data['wind']['speed'] * 3.6, 1),
-                    'presion' => $data['main']['pressure'],
-                    'descripcion' => $data['weather'][0]['description'],
-                    'icono' => $data['weather'][0]['icon'],
-                    'observaciones' => null,
+                    // 'viento' => round($data['wind']['speed'] * 3.6, 1),
+                    // 'presion' => $data['main']['pressure'],
+                    // 'descripcion' => $data['weather'][0]['description'],
+                    // 'icono' => $data['weather'][0]['icon'],
+                    'observaciones' => ucfirst($data['weather'][0]['description']),
                 ]);
             }
         } catch (\Exception $e) {

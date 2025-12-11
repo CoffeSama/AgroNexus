@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    
+    
+    //OrgTrack - Sistema de Envíos Externo
+    
+    'orgtrack' => [
+        'url' => env('ORGTRACK_API_URL', 'http://127.0.0.1:8001/api'),
+        'timeout' => env('ORGTRACK_TIMEOUT', 10),
+    ],
+
 ];

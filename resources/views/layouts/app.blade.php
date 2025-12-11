@@ -100,6 +100,21 @@
         .main-footer a {
             color: var(--primary-color);
         }
+
+        .role-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+        .role-badge.admin {
+            background: #dc3545;
+            color: white;
+        }
+        .role-badge.agricultor {
+            background: #28a745;
+            color: white;
+        }
     </style>
 
     @stack('styles')
@@ -120,6 +135,10 @@
         : 'images/user.png';
 
     $userImageUrl = asset($userImagePath);
+
+    // Obtener rol del usuario
+    $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'sin rol') : 'invitado';
+    $isAdmin = $authUser && $authUser->hasRole('admin');
 @endphp
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -183,6 +202,7 @@
                         <p>
                             @auth
                                 {{ $userFullName }}
+                                <small class="role-badge {{ $userRole }}">{{ ucfirst($userRole) }}</small>
                             @else
                                 Invitado
                             @endauth
@@ -227,7 +247,7 @@
                             Invitado
                         @endauth
                     </a>
-                    <span class="text-xs text-muted">Administrador</span>
+                    <span class="role-badge {{ $userRole }}">{{ ucfirst($userRole) }}</span>
                 </div>
             </div>
 
@@ -237,7 +257,7 @@
                     role="menu"
                     data-accordion="false">
 
-                    {{-- DASHBOARD --}}
+                    {{-- DASHBOARD (todos) --}}
                     <li class="nav-item">
                         <a href="{{ route('dashboard') }}"
                         class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -246,7 +266,7 @@
                         </a>
                     </li>
 
-                    {{-- GESTIÓN DE LOTES --}}
+                    {{-- GESTIÓN DE LOTES (todos) --}}
                     <li class="nav-item {{ request()->routeIs('lotes.*','actividades.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('lotes.*','actividades.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-map-marked-alt"></i>
@@ -287,7 +307,7 @@
                         </ul>
                     </li>
 
-                    {{-- PRODUCCIÓN --}}
+                    {{-- PRODUCCIÓN (todos) --}}
                     <li class="nav-item {{ request()->routeIs('producciones.*','climas.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('producciones.*','climas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-seedling"></i>
@@ -314,7 +334,7 @@
                         </ul>
                     </li>
 
-                    {{-- INVENTARIO --}}
+                    {{-- INVENTARIO (todos pueden ver, solo admin edita) --}}
                     <li class="nav-item {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('insumos.*','lote-insumos.*','almacenes.*','producciones_almacenamiento.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-warehouse"></i>
@@ -349,13 +369,45 @@
                                 <a href="{{ route('producciones_almacenamiento.index') }}"
                                 class="nav-link {{ request()->routeIs('producciones_almacenamiento.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Almacenamiento de Producción</p>
+                                    <p>Almacenamiento</p>
                                 </a>
                             </li>
                         </ul>
                     </li>
 
-                    {{-- VENTAS --}}
+                    {{-- ENVÍOS (todos) --}}
+                    <li class="nav-item {{ request()->routeIs('envios.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('envios.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-truck"></i>
+                            <p>
+                                Envíos
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('envios.mandar') }}"
+                                   class="nav-link {{ request()->routeIs('envios.mandar') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Mandar Envío</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('envios.seguimiento') }}"
+                                   class="nav-link {{ request()->routeIs('envios.seguimiento') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Seguimiento Envío</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    {{-- ============================================ --}}
+                    {{-- SECCIONES SOLO PARA ADMIN --}}
+                    {{-- ============================================ --}}
+                    @if($isAdmin)
+
+                    {{-- VENTAS (solo admin) --}}
                     <li class="nav-item {{ request()->routeIs('ventas.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('ventas.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-dollar-sign"></i>
@@ -375,7 +427,7 @@
                         </ul>
                     </li>
 
-                    {{-- REPORTES --}}
+                    {{-- REPORTES (solo admin) --}}
                     <li class="nav-item {{ request()->routeIs('reportes.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-bar"></i>
@@ -430,34 +482,7 @@
                         </ul>
                     </li>
 
-                    {{-- ENVÍOS --}}
-                    <li class="nav-item {{ request()->routeIs('envios.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link {{ request()->routeIs('envios.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-truck"></i>
-                            <p>
-                                Envíos
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{{ route('envios.mandar') }}"
-                                   class="nav-link {{ request()->routeIs('envios.mandar') ? 'active' : '' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Mandar Envío</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('envios.seguimiento') }}"
-                                   class="nav-link {{ request()->routeIs('envios.seguimiento') ? 'active' : '' }}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Seguimiento Envío</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    {{-- CATÁLOGOS --}}
+                    {{-- CATÁLOGOS (solo admin) --}}
                     <li class="nav-item {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('cultivos.*','tipo-actividad.*','tipo-insumos.*','unidades-medida.*','estado-lote-tipos.*','estado-lote-insumos.*','historial-estados-lote.*','prioridades.*','tipoalmacenes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book-open"></i>
@@ -533,7 +558,7 @@
                         </ul>
                     </li>
 
-                    {{-- GESTIÓN DE USUARIOS --}}
+                    {{-- GESTIÓN DE USUARIOS (solo admin) --}}
                     <li class="nav-item {{ request()->routeIs('gestion.*') ? 'menu-open' : '' }}">
                         <a href="{{ route('gestion.index') }}"
                            class="nav-link {{ request()->routeIs('gestion.*') ? 'active' : '' }}">
@@ -541,6 +566,10 @@
                             <p>Gestión de Usuarios</p>
                         </a>
                     </li>
+
+                    @endif
+                    {{-- FIN SECCIONES SOLO ADMIN --}}
+
                 </ul>
             </nav>
         </div>

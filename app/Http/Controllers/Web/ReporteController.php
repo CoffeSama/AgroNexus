@@ -17,6 +17,7 @@ use App\Models\ProduccionAlmacenamiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReporteController extends Controller
 {
@@ -62,7 +63,7 @@ class ReporteController extends Controller
 
         $ventas = $query->orderBy('fechaventa', 'desc')->get();
 
-        $ventas->each(function($venta) {
+        $ventas->each(function ($venta) {
             $venta->total = $venta->cantidad * $venta->preciounitario;
         });
 
@@ -103,8 +104,17 @@ class ReporteController extends Controller
         $usuarios = Usuario::orderBy('nombre')->get();
 
         return view('reportes.ventas', compact(
-            'ventas', 'stats', 'ventasPorMes', 'ventasPorCultivo', 'topClientes',
-            'cultivos', 'usuarios', 'fechaDesde', 'fechaHasta', 'cultivoId', 'usuarioId'
+            'ventas',
+            'stats',
+            'ventasPorMes',
+            'ventasPorCultivo',
+            'topClientes',
+            'cultivos',
+            'usuarios',
+            'fechaDesde',
+            'fechaHasta',
+            'cultivoId',
+            'usuarioId'
         ));
     }
 
@@ -142,9 +152,9 @@ class ReporteController extends Controller
 
         $stockAlmacenes = Almacen::with('unidadMedida')
             ->get()
-            ->map(function($almacen) {
+            ->map(function ($almacen) {
                 $stockActual = ProduccionAlmacenamiento::where('almacenid', $almacen->almacenid)->sum('cantidad');
-                return (object)[
+                return (object) [
                     'nombre' => $almacen->nombre,
                     'stockactual' => $stockActual ?? 0,
                     'capacidadmaxima' => $almacen->capacidad ?? 0,
@@ -152,7 +162,12 @@ class ReporteController extends Controller
             });
 
         return view('reportes.inventario', compact(
-            'insumos', 'stats', 'insumosPorTipo', 'alertasStock', 'consumoReciente', 'stockAlmacenes'
+            'insumos',
+            'stats',
+            'insumosPorTipo',
+            'alertasStock',
+            'consumoReciente',
+            'stockAlmacenes'
         ));
     }
 
@@ -163,9 +178,8 @@ class ReporteController extends Controller
     {
         $dias = $request->get('dias', 7);
 
-        // Historial de clima (registros generales sin lote específico)
-        $historialClima = Clima::whereNull('loteid')
-            ->where('fecha', '>=', now()->subDays($dias))
+        // Historial de clima (últimos registros)
+        $historialClima = Clima::where('fecha', '>=', now()->subDays($dias))
             ->orderBy('fecha', 'desc')
             ->get();
 
@@ -173,19 +187,21 @@ class ReporteController extends Controller
         $promedios = [
             'temperatura' => $historialClima->avg('temperatura') ?? 0,
             'humedad' => $historialClima->avg('humedad') ?? 0,
-            'viento' => $historialClima->avg('viento') ?? 0,
+            // 'viento' => $historialClima->avg('viento') ?? 0, // Columna no existe
         ];
 
         // Datos para el gráfico
         $datosGrafico = Clima::selectRaw("TO_CHAR(fecha, 'DD/MM') as dia, AVG(temperatura) as temp, AVG(humedad) as hum")
-            ->whereNull('loteid')
             ->where('fecha', '>=', now()->subDays($dias))
             ->groupByRaw("TO_CHAR(fecha, 'DD/MM'), DATE(fecha)")
             ->orderByRaw('DATE(fecha)')
             ->get();
 
         return view('reportes.climatico', compact(
-            'historialClima', 'promedios', 'datosGrafico', 'dias'
+            'historialClima',
+            'promedios',
+            'datosGrafico',
+            'dias'
         ));
     }
 
@@ -247,8 +263,17 @@ class ReporteController extends Controller
         $lotes = Lote::orderBy('nombre')->get();
 
         return view('reportes.produccion', compact(
-            'producciones', 'stats', 'produccionPorCultivo', 'produccionPorMes', 'topLotes',
-            'cultivos', 'lotes', 'fechaDesde', 'fechaHasta', 'cultivoId', 'loteId'
+            'producciones',
+            'stats',
+            'produccionPorCultivo',
+            'produccionPorMes',
+            'topLotes',
+            'cultivos',
+            'lotes',
+            'fechaDesde',
+            'fechaHasta',
+            'cultivoId',
+            'loteId'
         ));
     }
 
@@ -264,11 +289,11 @@ class ReporteController extends Controller
         $loteId = $request->get('lote_id');
 
         $query = Actividad::with(['lote', 'usuario', 'tipoActividad', 'prioridad']);
-        
+
         // Solo aplicar filtro de fechas si hay fechainicio
-        $query->where(function($q) use ($fechaDesde, $fechaHasta) {
+        $query->where(function ($q) use ($fechaDesde, $fechaHasta) {
             $q->whereBetween('fechainicio', [$fechaDesde, $fechaHasta])
-              ->orWhereNull('fechainicio');
+                ->orWhereNull('fechainicio');
         });
 
         if ($tipoId) {
@@ -314,8 +339,16 @@ class ReporteController extends Controller
         $lotes = Lote::orderBy('nombre')->get();
 
         return view('reportes.actividades', compact(
-            'actividades', 'stats', 'actividadesPorTipo', 'actividadesPorDia', 'tipos', 'lotes',
-            'fechaDesde', 'fechaHasta', 'tipoId', 'loteId'
+            'actividades',
+            'stats',
+            'actividadesPorTipo',
+            'actividadesPorDia',
+            'tipos',
+            'lotes',
+            'fechaDesde',
+            'fechaHasta',
+            'tipoId',
+            'loteId'
         ));
     }
 
@@ -326,12 +359,62 @@ class ReporteController extends Controller
     {
         $fechaDesde = $request->get('fecha_desde', now()->startOfYear()->toDateString());
         $fechaHasta = $request->get('fecha_hasta', now()->toDateString());
+        $formato = $request->get('formato', 'csv');
+
+        // Obtener datos según el tipo
+        $datos = [];
+        $viewName = "reportes.pdf.{$tipo}";
+        $filename = "reporte_{$tipo}_" . now()->format('Y-m-d');
 
         switch ($tipo) {
             case 'ventas':
                 $datos = Venta::with(['produccion.lote.cultivo', 'unidadMedida'])
                     ->whereBetween('fechaventa', [$fechaDesde, $fechaHasta])
+                    ->orderBy('fechaventa', 'desc')
                     ->get();
+                break;
+
+            case 'produccion':
+                $datos = Produccion::with(['lote.cultivo', 'unidadMedida'])
+                    ->whereBetween('fechacosecha', [$fechaDesde, $fechaHasta])
+                    ->orderBy('fechacosecha', 'desc')
+                    ->get();
+                break;
+
+            case 'inventario':
+                $datos = Insumo::with(['tipo', 'unidadMedida'])
+                    ->orderBy('nombre')
+                    ->get();
+                break;
+
+            case 'actividades':
+                $datos = Actividad::with(['lote', 'tipoActividad', 'usuario'])
+                    ->whereBetween('fechainicio', [$fechaDesde, $fechaHasta])
+                    ->orderBy('fechainicio', 'desc')
+                    ->get();
+                break;
+
+            default:
+                return back()->with('error', 'Tipo de reporte no válido');
+        }
+
+        // Exportar a PDF
+        if ($formato === 'pdf') {
+            $pdf = Pdf::loadView($viewName, [
+                'datos' => $datos,
+                'fechaDesde' => $fechaDesde,
+                'fechaHasta' => $fechaHasta,
+                'tipo' => $tipo
+            ]);
+            return $pdf->download("{$filename}.pdf");
+        }
+
+        // Exportar a CSV (Lógica original refactorizada)
+        $headers = [];
+        $rows = [];
+
+        switch ($tipo) {
+            case 'ventas':
                 $headers = ['ID', 'Fecha', 'Cliente', 'Cultivo', 'Cantidad', 'Unidad', 'Precio Unit.', 'Total'];
                 $rows = $datos->map(fn($v) => [
                     $v->ventaid,
@@ -346,9 +429,6 @@ class ReporteController extends Controller
                 break;
 
             case 'produccion':
-                $datos = Produccion::with(['lote.cultivo', 'unidadMedida'])
-                    ->whereBetween('fechacosecha', [$fechaDesde, $fechaHasta])
-                    ->get();
                 $headers = ['ID', 'Fecha Cosecha', 'Lote', 'Cultivo', 'Cantidad', 'Unidad', 'Observaciones'];
                 $rows = $datos->map(fn($p) => [
                     $p->produccionid,
@@ -362,7 +442,6 @@ class ReporteController extends Controller
                 break;
 
             case 'inventario':
-                $datos = Insumo::with(['tipo', 'unidadMedida'])->get();
                 $headers = ['ID', 'Nombre', 'Tipo', 'Unidad', 'Stock Actual', 'Stock Mínimo', 'Precio Unit.'];
                 $rows = $datos->map(fn($i) => [
                     $i->insumoid,
@@ -376,9 +455,6 @@ class ReporteController extends Controller
                 break;
 
             case 'actividades':
-                $datos = Actividad::with(['lote', 'tipoActividad', 'usuario'])
-                    ->whereBetween('fechainicio', [$fechaDesde, $fechaHasta])
-                    ->get();
                 $headers = ['ID', 'Fecha Inicio', 'Fecha Fin', 'Lote', 'Tipo', 'Responsable', 'Descripción'];
                 $rows = $datos->map(fn($a) => [
                     $a->actividadid,
@@ -390,16 +466,11 @@ class ReporteController extends Controller
                     $a->descripcion ?? ''
                 ]);
                 break;
-
-            default:
-                return back()->with('error', 'Tipo de exportación no válido');
         }
 
-        $filename = "reporte_{$tipo}_" . now()->format('Y-m-d') . '.csv';
-        
-        $callback = function() use ($headers, $rows) {
+        $callback = function () use ($headers, $rows) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
             fputcsv($file, $headers);
             foreach ($rows as $row) {
                 fputcsv($file, is_array($row) ? $row : $row->toArray());
@@ -409,7 +480,7 @@ class ReporteController extends Controller
 
         return response()->stream($callback, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Content-Disposition' => "attachment; filename=\"{$filename}.csv\"",
         ]);
     }
 
@@ -439,7 +510,8 @@ class ReporteController extends Controller
                     ];
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         return [
             'temperatura' => 28,
@@ -488,7 +560,8 @@ class ReporteController extends Controller
                     return $pronostico;
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         return [
             ['dia' => 'Hoy', 'temp_max' => 28, 'temp_min' => 19, 'descripcion' => 'Parcialmente nublado', 'icono' => '02d'],
@@ -505,9 +578,11 @@ class ReporteController extends Controller
         $hoy = now()->toDateString();
         $manana = now()->addDay()->toDateString();
 
-        if ($fecha == $hoy) return 'Hoy';
-        if ($fecha == $manana) return 'Mañana';
-        
+        if ($fecha == $hoy)
+            return 'Hoy';
+        if ($fecha == $manana)
+            return 'Mañana';
+
         return $dias[date('w', strtotime($fecha))];
     }
 }

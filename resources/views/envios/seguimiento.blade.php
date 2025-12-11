@@ -27,7 +27,78 @@
         min-height: 2.8em;
         max-height: 2.8em;
     }
+    
+    /* Indicador de conexión */
+    #conexion-status {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .status-online {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .status-offline {
+        background: linear-gradient(135deg, #dc3545, #e74a3b);
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .offline-banner {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .envio-local {
+        border: 2px dashed #ffc107 !important;
+        background: #fffdf5;
+    }
+    
+    .badge-local {
+        background: #ffc107;
+        color: #000;
+    }
 </style>
+
+<!-- Indicador de conexión -->
+<div id="conexion-status" class="status-online">
+    <i class="fas fa-wifi" id="conexion-icon"></i>
+    <span id="conexion-text">Conectado</span>
+</div>
+
+<!-- Banner offline -->
+<div id="offline-banner" class="offline-banner" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+            <strong>Modo Offline</strong>
+            <p class="mb-0 small text-muted">Mostrando datos guardados localmente. Algunos envíos pueden no estar actualizados.</p>
+        </div>
+        <button class="btn btn-warning btn-sm" onclick="verificarConexion()">
+            <i class="fas fa-sync-alt"></i> Reintentar
+        </button>
+    </div>
+</div>
 
 <!-- Info boxes -->
 <div class="row">
@@ -71,7 +142,7 @@
         <div class="info-box filter-card" data-filter="parcial">
             <span class="info-box-icon bg-orange elevation-1"><i class="fas fa-shipping-fast"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Parcialmente Entregado</span>
+                <span class="info-box-text">Parcial</span>
                 <span class="info-box-number" id="statParcial">0</span>
             </div>
         </div>
@@ -87,10 +158,20 @@
     </div>
 </div>
 
+<!-- Envíos locales pendientes -->
+<div id="envios-locales-section" class="card mb-3" style="display: none;">
+    <div class="card-header bg-warning">
+        <h3 class="card-title"><i class="fas fa-cloud-upload-alt mr-2"></i>Envíos Pendientes de Sincronización</h3>
+    </div>
+    <div class="card-body">
+        <div class="row" id="enviosLocalesGrid"></div>
+    </div>
+</div>
+
 <!-- Main content -->
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Listado de envíos de clientes</h3>
+        <h3 class="card-title">Listado de envíos</h3>
         <div class="card-tools">
             <div class="input-group input-group-sm" style="width: 250px;">
                 <input type="text" id="inputBuscarEnvio" class="form-control" placeholder="Buscar envíos...">
@@ -113,16 +194,18 @@
 @push('scripts')
 <script>
 (function(){
-    const API_URL = 'http://192.168.0.11:8000';
+    const API_URL = '{{ env("ORGTRACK_API_URL", "http://192.168.0.11:8000") }}';
+    const CACHE_KEY = 'agronexus_envios_cache';
+    const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos
     
+    let conectado = true;
+    let envios = [];
+    let enviosLocales = [];
+    let activeFilter = 'todos';
+    let searchTerm = '';
+
     const grid = document.getElementById('envioGrid');
     const searchInput = document.getElementById('inputBuscarEnvio');
-    const statTodos = document.getElementById('statTodos');
-    const statPendientes = document.getElementById('statPendientes');
-    const statAsignados = document.getElementById('statAsignados');
-    const statCurso = document.getElementById('statCurso');
-    const statParcial = document.getElementById('statParcial');
-    const statCompletados = document.getElementById('statCompletados');
     const filterCards = document.querySelectorAll('.filter-card');
 
     const STATUS_GROUPS = {
@@ -140,16 +223,13 @@
         'sin asignar': { label: 'Pendiente', badge: 'badge-warning' },
         'asignado': { label: 'Asignado', badge: 'badge-info' },
         'en curso': { label: 'En curso', badge: 'badge-primary' },
-        'parcialmente entregado': { label: 'Parcialmente Entregado', badge: 'badge-orange' },
+        'parcialmente entregado': { label: 'Parcial', badge: 'badge-orange' },
         'entregado': { label: 'Completado', badge: 'badge-success' },
         'finalizado': { label: 'Completado', badge: 'badge-success' },
         'completado': { label: 'Completado', badge: 'badge-success' },
     };
 
-    let envios = [];
-    let activeFilter = 'todos';
-    let searchTerm = '';
-
+    // Event listeners
     filterCards.forEach(card => {
         card.addEventListener('click', () => {
             const filter = card.getAttribute('data-filter');
@@ -165,43 +245,187 @@
         renderGrid();
     });
 
-    async function fetchEnvios() {
-        grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando envíos...</div>';
+    // ========================================
+    // TOLERANCIA A FALLOS
+    // ========================================
+    
+    async function verificarConexion() {
         try {
-            const res = await fetch(`${API_URL}/api/public/envios/all`);
-            if (!res.ok) throw new Error('No se pudieron cargar los envíos');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            const res = await fetch(`${API_URL}/api/tipo-transporte`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            conectado = res.ok;
+        } catch (e) {
+            conectado = false;
+        }
+        
+        actualizarIndicador();
+        return conectado;
+    }
 
-            const data = await res.json();
-            envios = Array.isArray(data) ? data : [];
-            renderSummary();
-            renderGrid();
-        } catch (error) {
-            console.error(error);
-            grid.innerHTML = `<div class="col-12 text-center text-danger py-5"><i class="fas fa-exclamation-triangle mr-2"></i>${error.message}</div>`;
+    function actualizarIndicador() {
+        const status = document.getElementById('conexion-status');
+        const icon = document.getElementById('conexion-icon');
+        const text = document.getElementById('conexion-text');
+        const banner = document.getElementById('offline-banner');
+        
+        if (conectado) {
+            status.className = 'status-online';
+            icon.className = 'fas fa-wifi';
+            text.textContent = 'Conectado';
+            banner.style.display = 'none';
+        } else {
+            status.className = 'status-offline';
+            icon.className = 'fas fa-wifi-slash';
+            text.textContent = 'Sin Conexión';
+            banner.style.display = 'block';
         }
     }
 
-    function renderSummary() {
-        const resumen = calcularResumen(envios);
-        statTodos.textContent = resumen.todos;
-        statPendientes.textContent = resumen.pendientes;
-        statAsignados.textContent = resumen.asignados;
-        statCurso.textContent = resumen.curso;
-        statParcial.textContent = resumen.parcial;
-        statCompletados.textContent = resumen.completados;
+    function guardarEnCache(data) {
+        const cacheData = {
+            envios: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
     }
 
-    function calcularResumen(data) {
-        const counts = { pendientes: 0, asignados: 0, curso: 0, parcial: 0, completados: 0, todos: data.length };
-        data.forEach(envio => {
+    function obtenerDeCache() {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (!cached) return null;
+            
+            const data = JSON.parse(cached);
+            // Verificar si el cache no ha expirado
+            if (Date.now() - data.timestamp < CACHE_EXPIRY) {
+                return data.envios;
+            }
+            return data.envios; // Retornar aunque esté expirado si no hay conexión
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function cargarEnviosLocales() {
+        try {
+            const stored = localStorage.getItem('agronexus_envios_pendientes');
+            enviosLocales = stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            enviosLocales = [];
+        }
+        renderEnviosLocales();
+    }
+
+    function renderEnviosLocales() {
+        const section = document.getElementById('envios-locales-section');
+        const grid = document.getElementById('enviosLocalesGrid');
+        
+        const pendientes = enviosLocales.filter(e => e.estado === 'pendiente');
+        
+        if (pendientes.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        
+        section.style.display = 'block';
+        grid.innerHTML = pendientes.map(envio => `
+            <div class="col-md-4 mb-3">
+                <div class="card card-outline card-warning envio-local">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cloud-upload-alt mr-1"></i>
+                            Local #${envio.id}
+                            <span class="badge badge-local float-right">Pendiente</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2">
+                            <i class="far fa-calendar mr-1"></i>
+                            ${new Date(envio.fecha).toLocaleDateString('es-BO')}
+                        </p>
+                        <p class="mb-1"><strong>Remitente:</strong> ${envio.datos?.envio?.nombre_remitente || 'N/A'}</p>
+                        <p class="mb-0 small text-muted">
+                            <i class="fas fa-info-circle"></i> Se sincronizará automáticamente
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ========================================
+    // CARGA DE DATOS
+    // ========================================
+
+    async function fetchEnvios() {
+        grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando envíos...</div>';
+        
+        // Verificar conexión primero
+        await verificarConexion();
+        
+        if (conectado) {
+            try {
+                const res = await fetch(`${API_URL}/api/public/envios/all`);
+                if (!res.ok) throw new Error('No se pudieron cargar los envíos');
+
+                const data = await res.json();
+                envios = Array.isArray(data) ? data : [];
+                
+                // Guardar en cache
+                guardarEnCache(envios);
+                
+            } catch (error) {
+                console.error('Error cargando envíos:', error);
+                conectado = false;
+                actualizarIndicador();
+                
+                // Intentar cargar desde cache
+                const cached = obtenerDeCache();
+                if (cached) {
+                    envios = cached;
+                } else {
+                    grid.innerHTML = `<div class="col-12 text-center text-danger py-5"><i class="fas fa-exclamation-triangle mr-2"></i>Sin conexión y sin datos en cache</div>`;
+                    return;
+                }
+            }
+        } else {
+            // Modo offline - cargar desde cache
+            const cached = obtenerDeCache();
+            if (cached) {
+                envios = cached;
+            } else {
+                grid.innerHTML = `<div class="col-12 text-center text-warning py-5"><i class="fas fa-wifi-slash mr-2"></i>Sin conexión. No hay datos guardados localmente.</div>`;
+                return;
+            }
+        }
+        
+        renderSummary();
+        renderGrid();
+    }
+
+    function renderSummary() {
+        const counts = { pendientes: 0, asignados: 0, curso: 0, parcial: 0, completados: 0, todos: envios.length };
+        
+        envios.forEach(envio => {
             const estado = normalizarEstado(envio.estado);
-            if (STATUS_GROUPS.pendientes(estado)) counts.pendientes += 1;
-            if (STATUS_GROUPS.asignados(estado)) counts.asignados += 1;
-            if (STATUS_GROUPS.curso(estado)) counts.curso += 1;
-            if (STATUS_GROUPS.parcial(estado)) counts.parcial += 1;
-            if (STATUS_GROUPS.completados(estado)) counts.completados += 1;
+            if (STATUS_GROUPS.pendientes(estado)) counts.pendientes++;
+            if (STATUS_GROUPS.asignados(estado)) counts.asignados++;
+            if (STATUS_GROUPS.curso(estado)) counts.curso++;
+            if (STATUS_GROUPS.parcial(estado)) counts.parcial++;
+            if (STATUS_GROUPS.completados(estado)) counts.completados++;
         });
-        return counts;
+        
+        document.getElementById('statTodos').textContent = counts.todos;
+        document.getElementById('statPendientes').textContent = counts.pendientes;
+        document.getElementById('statAsignados').textContent = counts.asignados;
+        document.getElementById('statCurso').textContent = counts.curso;
+        document.getElementById('statParcial').textContent = counts.parcial;
+        document.getElementById('statCompletados').textContent = counts.completados;
     }
 
     function renderGrid() {
@@ -209,12 +433,13 @@
             grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-inbox mr-2"></i>No hay envíos registrados.</div>';
             return;
         }
+        
         const filtrados = envios
             .filter(envio => STATUS_GROUPS[activeFilter]?.(normalizarEstado(envio.estado)) ?? true)
             .filter(envio => coincideBusqueda(envio, searchTerm));
 
         if (!filtrados.length) {
-            grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-search mr-2"></i>No hay envíos que coincidan con el filtro.</div>';
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-search mr-2"></i>No hay envíos que coincidan.</div>';
             return;
         }
 
@@ -270,12 +495,11 @@
     }
 
     function formatearFecha(value) {
-        if (!value) return 'Fecha no registrada';
+        if (!value) return 'Sin fecha';
         try {
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return value;
-            const opciones = { weekday: 'short', day: 'numeric', month: 'short' };
-            return date.toLocaleDateString('es-BO', opciones);
+            return date.toLocaleDateString('es-BO', { weekday: 'short', day: 'numeric', month: 'short' });
         } catch {
             return value;
         }
@@ -293,7 +517,26 @@
         return texto.includes(termino);
     }
 
-    // Cargar envíos al iniciar
+    // Exponer función para reintentar conexión
+    window.verificarConexion = async function() {
+        await verificarConexion();
+        if (conectado) {
+            fetchEnvios();
+        }
+    };
+
+    // Verificar conexión cada 30 segundos
+    setInterval(async () => {
+        const wasOffline = !conectado;
+        await verificarConexion();
+        if (wasOffline && conectado) {
+            // Si recuperamos conexión, recargar datos
+            fetchEnvios();
+        }
+    }, 30000);
+
+    // Inicializar
+    cargarEnviosLocales();
     fetchEnvios();
 })();
 </script>

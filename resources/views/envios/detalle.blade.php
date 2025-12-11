@@ -11,6 +11,81 @@
 @endsection
 
 @section('content')
+<style>
+    /* Indicador de conexión */
+    #conexion-status {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .status-online {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .status-offline {
+        background: linear-gradient(135deg, #dc3545, #e74a3b);
+        color: white;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .offline-banner {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 15px;
+        margin-left: 5px;
+    }
+    .timeline-item.recogida {
+        border-left-color: #28a745;
+    }
+    .timeline-item.entrega {
+        border-left-color: #dc3545;
+    }
+</style>
+
+<!-- Indicador de conexión -->
+<div id="conexion-status" class="status-online">
+    <i class="fas fa-wifi" id="conexion-icon"></i>
+    <span id="conexion-text">Conectado</span>
+</div>
+
+<!-- Banner offline -->
+<div id="offline-banner" class="offline-banner" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+            <strong>Modo Offline</strong>
+            <p class="mb-0 small text-muted">Mostrando datos guardados localmente. La información puede no estar actualizada.</p>
+        </div>
+        <button class="btn btn-warning btn-sm" onclick="reintentarConexion()">
+            <i class="fas fa-sync-alt"></i> Reintentar
+        </button>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -24,31 +99,84 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<style>
-.timeline-item {
-    border-left: 3px solid #dee2e6;
-    padding-left: 15px;
-    margin-left: 5px;
-}
-.timeline-item.recogida {
-    border-left-color: #28a745;
-}
-.timeline-item.entrega {
-    border-left-color: #dc3545;
-}
-</style>
 @endpush
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-if (!window.__envioDetalleInitialized) {
-    window.__envioDetalleInitialized = true;
-    
+(function(){
+    const API_URL = '{{ env("ORGTRACK_API_URL", "http://192.168.0.11:8000") }}';
     const envioId = {{ $id ?? 0 }};
+    const CACHE_KEY = `agronexus_envio_${envioId}`;
+    
     const cont = document.getElementById('detalleEnvio');
-    const state = { envio: null };
+    let conectado = true;
+    let state = { envio: null };
+    
     const loaderHtml = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando información del envío...</div>';
+
+    // ========================================
+    // TOLERANCIA A FALLOS
+    // ========================================
+    
+    async function verificarConexion() {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            const res = await fetch(`${API_URL}/api/tipo-transporte`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            conectado = res.ok;
+        } catch (e) {
+            conectado = false;
+        }
+        
+        actualizarIndicador();
+        return conectado;
+    }
+
+    function actualizarIndicador() {
+        const status = document.getElementById('conexion-status');
+        const icon = document.getElementById('conexion-icon');
+        const text = document.getElementById('conexion-text');
+        const banner = document.getElementById('offline-banner');
+        
+        if (conectado) {
+            status.className = 'status-online';
+            icon.className = 'fas fa-wifi';
+            text.textContent = 'Conectado';
+            banner.style.display = 'none';
+        } else {
+            status.className = 'status-offline';
+            icon.className = 'fas fa-wifi-slash';
+            text.textContent = 'Sin Conexión';
+            banner.style.display = 'block';
+        }
+    }
+
+    function guardarEnCache(data) {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            envio: data,
+            timestamp: Date.now()
+        }));
+    }
+
+    function obtenerDeCache() {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (!cached) return null;
+            return JSON.parse(cached).envio;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ========================================
+    // RENDER
+    // ========================================
 
     function badgeFor(estado){
         const map = { 
@@ -64,16 +192,33 @@ if (!window.__envioDetalleInitialized) {
         return `<span class="badge ${cls} ml-2">${estado}</span>`;
     }
 
-    function renderEnvio(envio){
+    function renderEnvio(envio, fromCache = false){
         state.envio = envio;
         const particiones = Array.isArray(envio.particiones) ? envio.particiones : [];
         
+        let cacheNotice = '';
+        if (fromCache) {
+            cacheNotice = `
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Datos offline:</strong> Esta información puede no estar actualizada.
+                </div>
+            `;
+        }
+        
         if (particiones.length === 0){
-            cont.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle mr-2"></i>Este envío no tiene particiones.</div>';
+            cont.innerHTML = cacheNotice + '<div class="alert alert-info"><i class="fas fa-info-circle mr-2"></i>Este envío no tiene particiones.</div>';
             return;
         }
         
         const wrapper = document.createElement('div');
+        
+        if (fromCache) {
+            const notice = document.createElement('div');
+            notice.className = 'alert alert-warning mb-3';
+            notice.innerHTML = '<i class="fas fa-info-circle mr-2"></i><strong>Datos offline:</strong> Esta información puede no estar actualizada.';
+            wrapper.appendChild(notice);
+        }
         
         particiones.forEach((p, idx) => {
             const card = document.createElement('div');
@@ -107,7 +252,7 @@ if (!window.__envioDetalleInitialized) {
 
                 <div class="mb-3">
                     <h6 class="font-weight-bold">Transporte</h6>
-                    <p class="mb-1">Tipo de transporte: ${p.tipoTransporte?.nombre || '—'}</p>
+                    <p class="mb-1">Tipo: ${p.tipoTransporte?.nombre || '—'}</p>
                     <p class="mb-0">Descripción: ${p.tipoTransporte?.descripcion || '—'}</p>
                 </div>
 
@@ -119,7 +264,7 @@ if (!window.__envioDetalleInitialized) {
                     <div class="p-2 bg-light rounded">
                         <strong>Origen:</strong> ${envio.nombre_origen || '—'}<br>
                         ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
-                            <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg, ${c.empaquetado || '—'})</div>
+                            <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
                         `).join('') : '<div class="mt-1">Sin productos</div>'}
                         <div class="mt-2 text-muted" style="font-size: 0.9rem;">
                             ${p.recogidaEntrega?.instrucciones_recogida || 'Sin instrucciones'}
@@ -135,7 +280,7 @@ if (!window.__envioDetalleInitialized) {
                     <div class="p-2 bg-light rounded">
                         <strong>Destino:</strong> ${envio.nombre_destino || '—'}<br>
                         ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
-                            <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg, ${c.empaquetado || '—'})</div>
+                            <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
                         `).join('') : '<div class="mt-1">Sin productos</div>'}
                         <div class="mt-2 text-muted" style="font-size: 0.9rem;">
                             ${p.recogidaEntrega?.instrucciones_entrega || 'Sin instrucciones'}
@@ -175,115 +320,59 @@ if (!window.__envioDetalleInitialized) {
             card.appendChild(body);
             wrapper.appendChild(card);
 
+            // Inicializar mapa
             setTimeout(() => {
-                const map = L.map(mapId).setView([
-                    envio.coordenadas_origen?.lat || -0.1807, 
-                    envio.coordenadas_origen?.lng || -78.4678
-                ], 12);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-                    maxZoom: 19, 
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
-                }).addTo(map);
-                
-                const o = [envio.coordenadas_origen?.lat, envio.coordenadas_origen?.lng];
-                const d = [envio.coordenadas_destino?.lat, envio.coordenadas_destino?.lng];
-                
-                const iconoOrigen = L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                });
-                
-                const iconoDestino = L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                });
-                
-                if (o[0] && o[1]) {
-                    L.marker(o, { icon: iconoOrigen }).addTo(map).bindPopup(`<strong>Origen:</strong><br>${envio.nombre_origen || 'Sin nombre'}`);
-                }
-                if (d[0] && d[1]) {
-                    L.marker(d, { icon: iconoDestino }).addTo(map).bindPopup(`<strong>Destino:</strong><br>${envio.nombre_destino || 'Sin nombre'}`);
-                }
-                
-                let routeCoordinates = [];
-                
                 try {
+                    const map = L.map(mapId).setView([
+                        envio.coordenadas_origen?.lat || -17.3935, 
+                        envio.coordenadas_origen?.lng || -66.1570
+                    ], 12);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+                        maxZoom: 19, 
+                        attribution: '© OpenStreetMap' 
+                    }).addTo(map);
+                    
+                    const o = [envio.coordenadas_origen?.lat, envio.coordenadas_origen?.lng];
+                    const d = [envio.coordenadas_destino?.lat, envio.coordenadas_destino?.lng];
+                    
+                    const iconoOrigen = L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+                    
+                    const iconoDestino = L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+                    
+                    if (o[0] && o[1]) {
+                        L.marker(o, { icon: iconoOrigen }).addTo(map).bindPopup(`<strong>Origen:</strong><br>${envio.nombre_origen || 'N/A'}`);
+                    }
+                    if (d[0] && d[1]) {
+                        L.marker(d, { icon: iconoDestino }).addTo(map).bindPopup(`<strong>Destino:</strong><br>${envio.nombre_destino || 'N/A'}`);
+                    }
+                    
+                    // Dibujar ruta
                     if (envio.rutaGeoJSON) {
-                        const gj = JSON.parse(envio.rutaGeoJSON);
-                        const layer = L.geoJSON(gj, { 
-                            style: { color: '#007bff', weight: 4, opacity: 0.7 } 
-                        }).addTo(map);
-                        map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-                        
-                        if (gj.type === 'LineString' && Array.isArray(gj.coordinates)) {
-                            routeCoordinates = gj.coordinates.map(coord => [coord[1], coord[0]]);
-                        } else if (gj.type === 'FeatureCollection' && Array.isArray(gj.features)) {
-                            gj.features.forEach(feature => {
-                                if (feature.geometry?.type === 'LineString' && Array.isArray(feature.geometry.coordinates)) {
-                                    feature.geometry.coordinates.forEach(coord => {
-                                        routeCoordinates.push([coord[1], coord[0]]);
-                                    });
-                                }
-                            });
+                        try {
+                            const gj = JSON.parse(envio.rutaGeoJSON);
+                            const layer = L.geoJSON(gj, { style: { color: '#007bff', weight: 4, opacity: 0.7 } }).addTo(map);
+                            map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                        } catch (e) {
+                            if (o[0] && d[0]) {
+                                const line = L.polyline([o, d], { color: '#007bff', weight: 4, opacity: 0.7 }).addTo(map);
+                                map.fitBounds(line.getBounds(), { padding: [20, 20] });
+                            }
                         }
                     } else if (o[0] && d[0]) {
                         const line = L.polyline([o, d], { color: '#007bff', weight: 4, opacity: 0.7 }).addTo(map);
                         map.fitBounds(line.getBounds(), { padding: [20, 20] });
-                        routeCoordinates = [o, d];
                     }
                 } catch (e) {
-                    console.error('Error al procesar ruta:', e);
-                }
-                
-                if (p.estado === 'En curso' && routeCoordinates.length > 0) {
-                    function interpolatePoints(coord1, coord2, steps = 20) {
-                        const points = [];
-                        for (let i = 0; i <= steps; i++) {
-                            const ratio = i / steps;
-                            const lat = coord1[0] + (coord2[0] - coord1[0]) * ratio;
-                            const lng = coord1[1] + (coord2[1] - coord1[1]) * ratio;
-                            points.push([lat, lng]);
-                        }
-                        return points;
-                    }
-                    
-                    const smoothRoute = [];
-                    for (let i = 0; i < routeCoordinates.length - 1; i++) {
-                        const interpolated = interpolatePoints(routeCoordinates[i], routeCoordinates[i + 1], 20);
-                        smoothRoute.push(...interpolated);
-                    }
-                    
-                    const greenDotIcon = L.divIcon({
-                        className: 'animated-marker',
-                        html: '<div style="width: 16px; height: 16px; background-color: #28a745; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(40, 167, 69, 0.8);"></div>',
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    });
-                    
-                    const animatedMarker = L.marker(smoothRoute[0], { icon: greenDotIcon }).addTo(map);
-                    animatedMarker.bindPopup('Vehículo en tránsito');
-                    
-                    let currentIndex = 0;
-                    const animationSpeed = 150;
-                    
-                    const animateMarker = setInterval(() => {
-                        currentIndex++;
-                        if (currentIndex >= smoothRoute.length) {
-                            currentIndex = 0;
-                        }
-                        animatedMarker.setLatLng(smoothRoute[currentIndex]);
-                    }, animationSpeed);
-                    
-                    map._animationInterval = animateMarker;
+                    console.error('Error inicializando mapa:', e);
                 }
             }, 100);
         });
@@ -292,31 +381,71 @@ if (!window.__envioDetalleInitialized) {
         cont.appendChild(wrapper);
     }
 
-    async function obtenerEnvio() {
-        const res = await fetch(`http://localhost:8000/api/public/envios/${envioId}/seguimiento`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (!res.ok) {
-            throw new Error('No se pudo cargar el envío');
-        }
-        
-        return await res.json();
-    }
+    // ========================================
+    // CARGA DE DATOS
+    // ========================================
 
     async function cargarEnvio() {
         cont.innerHTML = loaderHtml;
-        try {
-            const envio = await obtenerEnvio();
-            console.log('Envío cargado:', envio);
-            renderEnvio(envio);
-        } catch (e) {
-            cont.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>${e.message}</div>`;
+        
+        await verificarConexion();
+        
+        if (conectado) {
+            try {
+                const res = await fetch(`${API_URL}/api/public/envios/${envioId}/seguimiento`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!res.ok) throw new Error('No se pudo cargar el envío');
+                
+                const envio = await res.json();
+                guardarEnCache(envio);
+                renderEnvio(envio, false);
+                
+            } catch (error) {
+                console.error('Error cargando envío:', error);
+                conectado = false;
+                actualizarIndicador();
+                
+                // Intentar desde cache
+                const cached = obtenerDeCache();
+                if (cached) {
+                    renderEnvio(cached, true);
+                } else {
+                    cont.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Sin conexión y sin datos guardados para este envío.</div>`;
+                }
+            }
+        } else {
+            // Modo offline
+            const cached = obtenerDeCache();
+            if (cached) {
+                renderEnvio(cached, true);
+            } else {
+                cont.innerHTML = `<div class="alert alert-warning"><i class="fas fa-wifi-slash mr-2"></i>Sin conexión. No hay datos guardados para este envío.</div>`;
+            }
         }
     }
 
+    // Función global para reintentar
+    window.reintentarConexion = async function() {
+        await verificarConexion();
+        if (conectado) {
+            cargarEnvio();
+        }
+    };
+
+    // Verificar conexión periódicamente
+    setInterval(async () => {
+        const wasOffline = !conectado;
+        await verificarConexion();
+        if (wasOffline && conectado) {
+            cargarEnvio();
+        }
+    }, 30000);
+
+    // Iniciar
     cargarEnvio();
-}
+})();
 </script>
 @endpush
