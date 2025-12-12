@@ -12,6 +12,6 @@ return [
     |
     */
 
-    'orgtrack_url' => env('ORGTRACK_API_URL', 'http://192.168.0.11:8000'),
+    'orgtrack_url' => env('ORGTRACK_API_URL', 'http://192.168.1.8:8000'),
 
 ];

@@ -399,6 +399,13 @@
                                     <p>Seguimiento Envío</p>
                                 </a>
                             </li>
+                            <li class="nav-item {{ request()->routeIs('pedidos.*') ? 'menu-open' : '' }}">
+                                <a href="{{ route('pedidos.index') }}"
+                                class="nav-link {{ request()->routeIs('pedidos.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-clipboard-list"></i>
+                                    <p>Pedidos</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 

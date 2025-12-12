@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\UnidadMedidaController;
 use App\Http\Controllers\Web\VentaController;
 use App\Http\Controllers\Web\GestionUsuariosController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\PedidoController;
 
 // 🔹 nuevos controladores web de almacenamiento
 use App\Http\Controllers\Web\TipoAlmacenController;
@@ -102,6 +103,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('almacenes', AlmacenController::class)
         ->parameters(['almacenes' => 'almacen']);
     Route::resource('producciones_almacenamiento', ProduccionAlmacenamientoController::class);
+    // ==============================
+    // PEDIDOS (CLIENTES EXTERNOS)
+    // ==============================
+    Route::resource('pedidos', PedidoController::class);
 
     // ==============================
     // GESTIÓN UNIFICADA DE USUARIOS

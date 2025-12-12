@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\EstadoLoteTipoController;
 use App\Http\Controllers\Api\DestinoProduccionController;
 use App\Http\Controllers\Api\EstadoLoteInsumoController;
 use App\Http\Controllers\Api\HistorialEstadoLoteController;
+use App\Http\Controllers\Api\PedidoController;
 
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\UsuarioController;
@@ -91,6 +92,12 @@ Route::name('api.')->group(function () {
 
     // VENTAS
     Route::apiResource('ventas', VentaController::class);
+
+    // ========================================================
+    // GRUPO: PEDIDOS (CLIENTE EXTERNO)
+    // ========================================================
+    Route::apiResource('pedidos', PedidoController::class);
+
 
     // AUTH
     Route::post('/register', [AuthController::class, 'register'])->name('register');

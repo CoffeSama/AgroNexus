@@ -43,4 +43,9 @@ class UnidadMedida extends Model
     {
         return $this->hasMany(ProduccionAlmacenamiento::class, 'unidadmedidaid', 'unidadmedidaid');
     }
+
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'unidadmedidaid', 'unidadmedidaid');
+    }
 }

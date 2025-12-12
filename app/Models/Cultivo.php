@@ -26,4 +26,9 @@ class Cultivo extends Model
     {
         return $this->hasMany(Lote::class, 'cultivoid', 'cultivoid');
     }
+
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'cultivoid', 'cultivoid');
+    }
 }
