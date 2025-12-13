@@ -9,7 +9,7 @@ class EstadoLoteTipo extends Model
 {
     use HasFactory;
 
-    protected $table = 'estadolote_tipo';
+    protected $table = 'estadolotetipo';
     protected $primaryKey = 'estadolotetipoid';
     public $timestamps = false;
 
