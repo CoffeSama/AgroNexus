@@ -15,6 +15,10 @@ services:
       DB_PASSWORD: admin123
       OPENWEATHER_API_KEY: 2d92048cf06002ced1f5704cb35924cb
       FIRMS_API_KEY: cfc7d38ed62916315185b7a1853bdd8d
+      CACHE_STORE: database
+      CACHE_DRIVER: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: sync
     depends_on:
       - db
     networks:
