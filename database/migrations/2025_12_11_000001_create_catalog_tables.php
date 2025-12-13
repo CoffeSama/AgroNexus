@@ -9,23 +9,23 @@ return new class extends Migration {
     {
         // Catalogos Simples
         $catalogs = [
-            'tipoinsumo' => 'tipoinsumoid',
-            'unidadmedida' => 'unidadmedidaid',
-            'cultivo' => 'cultivoid',
-            'tipoactividad' => 'tipoactividadid',
-            'tipoalmacen' => 'tipoalmacenid',
-            'prioridad' => 'prioridadid',
-            'estadoloteinsumo' => 'estadoloteinsumoid',
-            'estadolotetipo' => 'estadolotetipoid',
-            'destinoproduccion' => 'destinoproduccionid',
+            ['table' => 'tipoinsumo',          'pk' => 'tipoinsumoid',          'desc' => false],
+            ['table' => 'unidadmedida',        'pk' => 'unidadmedidaid',        'desc' => false],
+            ['table' => 'cultivo',             'pk' => 'cultivoid',             'desc' => false],
+            ['table' => 'tipoactividad',       'pk' => 'tipoactividadid',       'desc' => true],
+            ['table' => 'tipoalmacen',         'pk' => 'tipoalmacenid',         'desc' => true],
+            ['table' => 'prioridad',           'pk' => 'prioridadid',           'desc' => false],
+            ['table' => 'estadoloteinsumo',    'pk' => 'estadoloteinsumoid',    'desc' => false],
+            ['table' => 'estadolote_tipo',     'pk' => 'estadolotetipoid',      'desc' => true], // ✅ AQUÍ
+            ['table' => 'destinoproduccion',   'pk' => 'destinoproduccionid',   'desc' => false],
         ];
 
-        foreach ($catalogs as $tableName => $pkName) {
-            if (!Schema::hasTable($tableName)) {
-                Schema::create($tableName, function (Blueprint $table) use ($pkName) {
-                    $table->id($pkName);
+        foreach ($catalogs as $c) {
+            if (!Schema::hasTable($c['table'])) {
+                Schema::create($c['table'], function (Blueprint $table) use ($c) {
+                    $table->id($c['pk']);
                     $table->string('nombre');
-                    $table->text('descripcion')->nullable();
+                    if ($c['desc']) $table->text('descripcion')->nullable();
                 });
             }
         }
@@ -35,7 +35,7 @@ return new class extends Migration {
     {
         $catalogs = [
             'destinoproduccion',
-            'estadolotetipo',
+            'estadolote_tipo',
             'estadoloteinsumo',
             'prioridad',
             'tipoalmacen',

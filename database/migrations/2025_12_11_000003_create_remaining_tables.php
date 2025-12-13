@@ -61,7 +61,7 @@ return new class extends Migration {
                 $table->timestamps(); // created_at, updated_at
 
                 $table->foreign('loteid')->references('loteid')->on('lote');
-                $table->foreign('estadolotetipoid')->references('estadolotetipoid')->on('estadolotetipo');
+                $table->foreign('estadolotetipoid')->references('estadolotetipoid')->on('estadolote_tipo');
                 $table->foreign('usuarioid')->references('usuarioid')->on('usuario');
             });
         }

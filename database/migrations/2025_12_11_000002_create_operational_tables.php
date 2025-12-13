@@ -28,7 +28,7 @@ return new class extends Migration {
                 $table->foreign('usuarioid')->references('usuarioid')->on('usuario');
                 $table->foreign('unidadsuperficieid')->references('unidadmedidaid')->on('unidadmedida');
                 $table->foreign('cultivoid')->references('cultivoid')->on('cultivo');
-                $table->foreign('estadolotetipoid')->references('estadolotetipoid')->on('estadolotetipo');
+                $table->foreign('estadolotetipoid')->references('estadolotetipoid')->on('estadolote_tipo');
             });
         }
 
@@ -57,13 +57,17 @@ return new class extends Migration {
                 $table->unsignedBigInteger('loteid');
                 $table->unsignedBigInteger('insumoid');
                 $table->unsignedBigInteger('usuarioid');
-                $table->float('cantidad');
-                $table->dateTime('fechaaplicacion')->useCurrent();
+
+                $table->float('cantidadusada');
+                $table->dateTime('fechauo')->useCurrent();
+                $table->float('costototal')->nullable();
+                $table->unsignedBigInteger('estadoloteinsumoid');
                 $table->text('observaciones')->nullable();
 
                 $table->foreign('loteid')->references('loteid')->on('lote');
                 $table->foreign('insumoid')->references('insumoid')->on('insumo');
                 $table->foreign('usuarioid')->references('usuarioid')->on('usuario');
+                $table->foreign('estadoloteinsumoid')->references('estadoloteinsumoid')->on('estadoloteinsumo');
             });
         }
 
@@ -110,14 +114,17 @@ return new class extends Migration {
             Schema::create('venta', function (Blueprint $table) {
                 $table->id('ventaid');
                 $table->unsignedBigInteger('produccionid');
-                $table->date('fecha');
+
+                $table->date('fechaventa');
                 $table->string('cliente');
                 $table->float('cantidad');
+                $table->unsignedBigInteger('unidadmedidaid');
                 $table->float('preciounitario');
                 $table->float('total');
                 $table->text('observaciones')->nullable();
 
                 $table->foreign('produccionid')->references('produccionid')->on('produccion');
+                $table->foreign('unidadmedidaid')->references('unidadmedidaid')->on('unidadmedida');
             });
         }
     }
