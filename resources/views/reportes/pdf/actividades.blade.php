@@ -1,46 +1,80 @@
 @extends('reportes.pdf.layout')
 
 @section('content')
-    <div class="info">
-        <h3>Reporte de Actividades</h3>
-        <p><strong>Fecha Desde:</strong> {{ $fechaDesde }}</p>
-        <p><strong>Fecha Hasta:</strong> {{ $fechaHasta }}</p>
+    <div class="report-title">
+        <h2>Reporte de Actividades de Campo</h2>
+        <p>
+            Desde {{ \Carbon\Carbon::parse($fechaDesde)->format('d/m/Y') }}
+            hasta {{ \Carbon\Carbon::parse($fechaHasta)->format('d/m/Y') }}
+        </p>
     </div>
 
-    <table>
+    @php
+        $total = $datos->count();
+        $completadas = $datos->whereNotNull('fechafin')->count();
+        $pendientes = $datos->whereNull('fechafin')->count();
+    @endphp
+
+    <table class="summary-cards">
+        <tr>
+            <td class="card">
+                <span class="label">Total Actividades</span>
+                <span class="value">{{ $total }}</span>
+            </td>
+            <td class="card">
+                <span class="label">Completadas</span>
+                <span class="value" style="color:#28a745">{{ $completadas }}</span>
+            </td>
+            <td class="card">
+                <span class="label">Pendientes</span>
+                <span class="value" style="color:#e67e22">{{ $pendientes }}</span>
+            </td>
+            <td class="card">
+                <span class="label">Eficiencia</span>
+                <span class="value">{{ $total > 0 ? round(($completadas / $total) * 100) : 0 }}%</span>
+            </td>
+        </tr>
+    </table>
+
+    <table class="data-table">
         <thead>
             <tr>
-                <th>Fecha Inicio</th>
-                <th>Estado</th>
-                <th>Lote</th>
-                <th>Actividad</th>
-                <th>Responsable</th>
+                <th style="width: 15%">Inicio</th>
+                <th style="width: 20%">Actividad / Tipo</th>
+                <th style="width: 20%">Lote / Ubicación</th>
+                <th style="width: 20%">Responsable</th>
+                <th style="width: 15%">Estado</th>
+                <th style="width: 10%">Fin</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($datos as $actividad)
+            @foreach($datos as $act)
+                @php
+                    $isPending = is_null($act->fechafin);
+                @endphp
                 <tr>
-                    <td>{{ $actividad->fechainicio instanceof \Carbon\Carbon ? $actividad->fechainicio->format('d/m/Y') : $actividad->fechainicio }}
+                    <td>{{ $act->fechainicio instanceof \Carbon\Carbon ? $act->fechainicio->format('d/m/Y') : $act->fechainicio }}
                     </td>
                     <td>
-                        @if($actividad->fechafin)
-                            <span style="color: green">Completada
-                                ({{ $actividad->fechafin instanceof \Carbon\Carbon ? $actividad->fechafin->format('d/m/Y') : $actividad->fechafin }})</span>
+                        <b>{{ $act->tipoActividad->nombre ?? 'General' }}</b><br>
+                        <i style="font-size:9px; color:#555">{{ Str::limit($act->descripcion, 30) }}</i>
+                    </td>
+                    <td>{{ $act->lote->nombre ?? '-' }}</td>
+                    <td>
+                        <span style="font-size:10px">{{ $act->usuario->nombre ?? 'Sin asignar' }}</span>
+                    </td>
+                    <td>
+                        @if($isPending)
+                            <span style="color:#e67e22; font-weight:bold; font-size:10px;">PENDIENTE</span>
                         @else
-                            <span style="color: orange">Pendiente</span>
+                            <span style="color:#28a745; font-weight:bold; font-size:10px;">COMPLETADO</span>
                         @endif
                     </td>
-                    <td>{{ $actividad->lote->nombre ?? '-' }}</td>
-                    <td>{{ $actividad->tipoActividad->nombre ?? '-' }}</td>
-                    <td>{{ $actividad->usuario->nombre ?? '-' }}</td>
+                    <td>
+                        {{ $act->fechafin ? (\Carbon\Carbon::parse($act->fechafin)->format('d/m/Y')) : '-' }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
-
-    <div class="totals">
-        <p>Total Actividades: {{ $datos->count() }}</p>
-        <p>Pendientes: {{ $datos->whereNull('fechafin')->count() }}</p>
-        <p>Completadas: {{ $datos->whereNotNull('fechafin')->count() }}</p>
-    </div>
 @endsection

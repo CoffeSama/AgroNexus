@@ -213,7 +213,13 @@
                                         $fillClass = $porcentaje < 50 ? 'low' : ($porcentaje < 80 ? 'medium' : 'high');
                                     @endphp
                                     <div class="col-md-6 mb-2">
-                                        <div class="almacen-card" data-id="{{ $almacen->almacenid }}" data-disponible="{{ $disponible }}" data-nombre="{{ $almacen->nombre }}" data-um-almacen="{{ $almacen->unidadMedida->abreviatura }}">>
+                                        <div class="almacen-card" 
+                                             data-id="{{ $almacen->almacenid }}" 
+                                             data-disponible="{{ $disponible }}" 
+                                             data-nombre="{{ $almacen->nombre }}" 
+                                             data-um-almacen="{{ $almacen->unidadMedida->abreviatura }}"
+                                             data-tipo="{{ strtolower($almacen->tipoAlmacen->nombre ?? 'general') }}"
+                                             data-tags="{{ strtolower($almacen->nombre . ' ' . ($almacen->tipoAlmacen->nombre ?? '')) }}">
                                             <div class="d-flex align-items-start">
                                                 <div class="almacen-icon mr-2 text-center">
                                                     @if(str_contains(strtolower($almacen->tipoAlmacen->nombre ?? ''), 'silo'))
@@ -374,93 +380,305 @@
     return cantidad * (factores[unidad] || 1);
 }
 
-$(document).ready(function() {
-    // Mostrar info del lote
-    $('#loteid').on('change', function() {
-        const selected = $(this).find(':selected');
-        if (selected.val()) {
-            $('#infoCultivo').text(selected.data('cultivo'));
-            $('#infoResponsable').text(selected.data('responsable'));
-            $('#loteInfo').slideDown();
-        } else {
-            $('#loteInfo').slideUp();
-        }
-    });
+    $(document).ready(function() {
+        
+        // Función de recomendación inteligente
+        function recomendarAlmacen(cultivo) {
+            if (!cultivo) return;
+            cultivo = cultivo.toLowerCase();
 
-    // Switch de almacén
-    $('#enviarAlmacen').on('change', function() {
-        if ($(this).is(':checked')) {
-            $('#almacenOptions').slideDown();
-            $('#almacenSection').addClass('active');
-            $('#actionAlmacen').show();
-        } else {
-            $('#almacenOptions').slideUp();
-            $('#almacenSection').removeClass('active');
-            $('#actionAlmacen').hide();
-            $('.almacen-card').removeClass('selected');
+            // Palabras clave de mapeo (simple)
+            const mapeo = {
+                'maiz': ['silo', 'grano'],
+                'maíz': ['silo', 'grano'],
+                'soya': ['silo', 'grano'],
+                'trigo': ['silo', 'grano'],
+                'arroz': ['silo', 'grano'],
+                'papa': ['bodega', 'frio', 'tuberculo'],
+                'caña': ['bodega', 'zafra'],
+                'fruta': ['frio', 'refrigerado'],
+                'cítrico': ['bodega'],
+            };
+
+            // Buscar keywords genericas y la clave específica encontrada
+            let keywords = [];
+            let foundKey = null;
+
+            for (const key in mapeo) {
+                if (cultivo.includes(key)) {
+                    keywords = mapeo[key];
+                    foundKey = key; // Guardamos "caña", "papa", etc.
+                    break;
+                }
+            }
+
+            // Si no hay keywords específicas, usar el nombre del cultivo como fallback
+            if (keywords.length === 0) {
+                keywords = [cultivo];
+            }
+
+            // Filtrar almacenes
+            let mejorMatch = null;
+            let maxScore = 0;
+            
+            $('.almacen-card').each(function() {
+                const tags = $(this).data('tags'); // ej: "bodega caña zona sur"
+                let score = 0;
+
+                // 1. Score por coincidencia de palabras clave genéricas (Bodega, Silo, etc.)
+                keywords.forEach(word => {
+                    if (tags.includes(word)) score += 2;
+                });
+                
+                // 2. Score masivo por coincidencia de la clave específica (ej: "caña" en "Bodega Caña")
+                if (foundKey && tags.includes(foundKey)) {
+                    score += 10;
+                }
+                
+                // 3. Score por coincidencia exacta del cultivo completo ("caña de azúcar")
+                if (tags.includes(cultivo)) score += 5;
+
+                // Debug para ver qué está pasando (solo visible en consola)
+                // console.log(`Almacén: ${$(this).data('nombre')} | Score: ${score}`);
+
+                if (score > 0) {
+                    // Resaltar visualmente
+                    if (score >= 10) {
+                        // Match fuerte
+                        $(this).css('border-color', '#2c5530').css('background', '#d4edda'); 
+                    } else {
+                        // Match débil (posiblemente solo por tipo 'bodega')
+                        $(this).css('border-color', '#17a2b8').css('background', '#f0fcff');
+                    }
+                    
+                    // Lógica para elegir el MEJOR, no el primero
+                    if (score > maxScore) {
+                        maxScore = score;
+                        mejorMatch = $(this);
+                    }
+                } else {
+                    $(this).css('border-color', '#dee2e6').css('background', 'white'); // Restaurar
+                }
+            });
+
+            // Si encontramos un match y NO hay nada seleccionado aun...
+            if (mejorMatch && !$('#almacenid').val()) {
+                mejorMatch.trigger('click');
+                
+                // Mostrar notificación toast o pequeño mensaje
+                const nombre = mejorMatch.data('nombre');
+                
+                // Limpiar alertas anteriores
+                $('.alert-suggestion').remove();
+
+                $('#almacenOptions').prepend(`
+                    <div class="alert alert-info alert-dismissible fade show p-2 small mb-2 alert-suggestion" role="alert">
+                        <i class="fas fa-magic mr-1"></i> Sugerencia Inteligente: <strong>${nombre}</strong> (Mejor coincidencia para ${cultivo})
+                        <button type="button" class="close p-2" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                `);
+            }
+        }
+
+        // Mostrar info del lote y activar recomendación
+        $('#loteid').on('change', function() {
+            const selected = $(this).find(':selected');
+            if (selected.val()) {
+                const cultivo = selected.data('cultivo');
+                $('#infoCultivo').text(cultivo);
+                $('#infoResponsable').text(selected.data('responsable'));
+                $('#loteInfo').slideDown();
+                
+                // Activar "Almacenar cosecha" automáticamente para mejor UX
+                if (!$('#enviarAlmacen').is(':checked')) {
+                    $('#enviarAlmacen').prop('checked', true).trigger('change');
+                }
+                
+                // Ejecutar recomendación
+                recomendarAlmacen(cultivo);
+            } else {
+                $('#loteInfo').slideUp();
+            }
+        });
+
+        // Switch de almacén
+        $('#enviarAlmacen').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#almacenOptions').slideDown();
+                $('#almacenSection').addClass('active');
+                $('#actionAlmacen').show();
+            } else {
+                $('#almacenOptions').slideUp();
+                $('#almacenSection').removeClass('active');
+                $('#actionAlmacen').hide();
+                $('.almacen-card').removeClass('selected').css('background', 'white').css('border-color', '#dee2e6');
+                $('.almacen-card .fa-check-circle').hide();
+                $('#almacenid').val('');
+                $('.alert-dismissible').remove(); // Quitar alertas de sugerencia
+                $('#infoAlmacenSelected').html('<i class="fas fa-warehouse mr-1"></i> <strong>Almacén:</strong> No seleccionado');
+            }
+        });
+
+        // Seleccionar almacén
+        $('.almacen-card').on('click', function() {
+            const id = $(this).data('id');
+            const nombre = $(this).data('nombre');
+            const disponible = $(this).data('disponible');
+
+            // Limpiar estilos previos
+            $('.almacen-card').removeClass('selected').css('background', 'white').css('border-color', '#dee2e6');; 
             $('.almacen-card .fa-check-circle').hide();
-            $('#almacenid').val('');
-            $('#infoAlmacenSelected').html('<i class="fas fa-warehouse mr-1"></i> <strong>Almacén:</strong> No seleccionado');
-        }
-    });
 
-    // Seleccionar almacén
-    $('.almacen-card').on('click', function() {
-        const id = $(this).data('id');
-        const nombre = $(this).data('nombre');
-        const disponible = $(this).data('disponible');
+            // Seleccionar este
+            $(this).addClass('selected');
+            $(this).find('.fa-check-circle').show();
 
-        // Deseleccionar otros
-        $('.almacen-card').removeClass('selected');
-        $('.almacen-card .fa-check-circle').hide();
+            $('#almacenid').val(id);
+            $('#infoAlmacenSelected').html('<i class="fas fa-warehouse mr-1"></i> <strong>Almacén:</strong> ' + nombre);
 
-        // Seleccionar este
-        $(this).addClass('selected');
-        $(this).find('.fa-check-circle').show();
+            // Verificar capacidad
+            const cantidad = parseFloat($('#cantidad').val()) || 0;
+            if (cantidad > 0) {
+                verificarCapacidad(cantidad, disponible, $(this));
+            }
+        });
 
-        $('#almacenid').val(id);
-        $('#infoAlmacenSelected').html('<i class="fas fa-warehouse mr-1"></i> <strong>Almacén:</strong> ' + nombre);
+        // Verificar al cambiar cantidad
+        $('#cantidad').on('change keyup', function() {
+            const cantidad = parseFloat($(this).val()) || 0;
+            const almacenCard = $('.almacen-card.selected');
+            if (almacenCard.length) {
+                const disponible = almacenCard.data('disponible');
+                verificarCapacidad(cantidad, disponible, almacenCard);
+            }
+        });
 
-        // Verificar capacidad
-        // Verificar capacidad CON CONVERSIÓN DE UNIDADES
-        const cantidad = parseFloat($('#cantidad').val()) || 0;
-
-        if (cantidad > 0) {
+        function verificarCapacidad(cantidad, disponible, card) {
             const umProduccion = $('#unidadmedidaid option:selected').data('abrev');
-            const umAlmacen = $(this).data('um-almacen');
+            const umAlmacen = card.data('um-almacen');
 
             const cantidadKg = convertirAKg(cantidad, umProduccion);
             const disponibleKg = convertirAKg(disponible, umAlmacen);
 
             if (cantidadKg > disponibleKg) {
-                alert(
-                    '⚠️ Advertencia: La cantidad (' + cantidad + ' ' + umProduccion + ')' +
-                    ' excede la capacidad disponible del almacén (' + disponible + ' ' + umAlmacen + ')'
-                );
+                // Usar toast o borde rojo en lugar de alert invasivo
+                card.css('border-color', '#dc3545');
+                if ($('#alertaCapacidad').length === 0) {
+                     $('#almacenOptions').prepend(`
+                        <div id="alertaCapacidad" class="alert alert-danger p-2 small mb-2">
+                             ⚠️ Excede capacidad: ${cantidad} ${umProduccion} > disp. ${disponible} ${umAlmacen}
+                        </div>
+                    `);
+                }
+            } else {
+                card.css('border-color', '#28a745');
+                $('#alertaCapacidad').remove();
             }
         }
-    });
 
-    // Verificar al cambiar cantidad
-    $('#cantidad').on('change', function() {
-        const cantidad = parseFloat($(this).val()) || 0;
-        const almacenCard = $('.almacen-card.selected');
-        if (almacenCard.length) {
-            const disponible = almacenCard.data('disponible');
-            const umProduccion = $('#unidadmedidaid option:selected').data('abrev');
-            const umAlmacen = almacenCard.data('um-almacen');
+        // SMART UNIT CONVERSION v2 (Normalized Logic)
+        function checkSmartConversion() {
+            const cantidadInput = $('#cantidad');
+            const unidadSelect = $('#unidadmedidaid');
+            const cantidad = parseFloat(cantidadInput.val()) || 0;
+            const unidadOption = unidadSelect.find('option:selected');
+            const unidadNombre = unidadOption.text().toLowerCase();
+            const unidadAbrev = unidadOption.data('abrev') ? unidadOption.data('abrev').toLowerCase() : '';
 
-            const cantidadKg = convertirAKg(cantidad, umProduccion);
-            const disponibleKg = convertirAKg(disponible, umAlmacen);
+            // 1. Normalize to KG
+            let cantidadKg = 0;
+            // Detectar unidad actual
+            if (unidadAbrev === 'kg' || unidadNombre.includes('kilo') || unidadNombre.includes('kg')) {
+                cantidadKg = cantidad;
+            } else if (unidadAbrev === 'g' || unidadNombre.includes('gramo') || unidadNombre.includes('gr')) {
+                cantidadKg = cantidad / 1000;
+            } else if (unidadAbrev === 't' || unidadNombre.includes('ton') || unidadNombre.includes('tonelada')) {
+                cantidadKg = cantidad * 1000;
+            } else if (unidadAbrev === 'lb' || unidadNombre.includes('libra')) {
+                cantidadKg = cantidad * 0.453592;
+            } else {
+                return; // Unidad no soportada para conversión inteligente
+            }
 
-            if (cantidadKg > disponibleKg) {
-                alert(
-                    '⚠️ Advertencia: La cantidad (' + cantidad + ' ' + umProduccion + ')' +
-                    ' excede la capacidad disponible del almacén (' + disponible + ' ' + umAlmacen + ')'
-                );
+            $('#smartConversionAlert').remove();
+
+            // 2. Determine Best Unit
+            let target = null;
+
+            // Priority: TON > KG
+            if (cantidadKg >= 1000) {
+                 // Suggest TON if current is NOT TON
+                 if (!unidadNombre.includes('ton') && !unidadAbrev.includes('t')) {
+                     target = { text: 'Ton', value: cantidadKg / 1000, keyword: 'ton', abrev: 't' };
+                 }
+            } 
+            else if (cantidadKg >= 1) {
+                // Suggest KG if current is NOT KG
+                 if (!unidadNombre.includes('kilo') && !unidadNombre.includes('kg') && unidadAbrev !== 'kg') {
+                     target = { text: 'Kg', value: cantidadKg, keyword: 'kilo', abrev: 'kg' };
+                 }
+            }
+
+            if (target) {
+                 mostrarSugerenciaConversion(cantidadInput, target.text, target.value, target.keyword, target.abrev);
             }
         }
+
+        function mostrarSugerenciaConversion(inputElement, nuevaUnidadTexto, nuevoValor, keywordNuevaUnidad, nuevaAbrev) {
+            // Formatear valor para mostrar (max 2 decimales si es entero, o los necesarios)
+            const valorMostrado = Number.isInteger(nuevoValor) ? nuevoValor : nuevoValor.toFixed(3).replace(/\.?0+$/, '');
+
+            const alertHtml = `
+                <div id="smartConversionAlert" class="alert alert-warning p-2 mt-2 shadow-sm d-flex justify-content-between align-items-center" style="border-radius: 8px; cursor: pointer;">
+                    <div>
+                        <i class="fas fa-lightbulb text-warning mr-2"></i>
+                        <strong>Sugerencia:</strong> ¿Convertir a <strong>${valorMostrado} ${nuevaUnidadTexto}</strong>?
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light border font-weight-bold" id="btnAplicarConversion">
+                        Aplicar
+                    </button>
+                </div>
+            `;
+            
+            inputElement.closest('.form-group').append(alertHtml);
+
+            $('#btnAplicarConversion').on('click', function() {
+                // Aplicar valor
+                $('#cantidad').val(nuevoValor);
+                
+                // Buscar y seleccionar la nueva unidad en el select
+                let unitFound = false;
+                $('#unidadmedidaid option').each(function() {
+                    const abrev = $(this).data('abrev') ? $(this).data('abrev').toLowerCase() : '';
+                    const text = $(this).text().toLowerCase();
+                    
+                    // Match robusto
+                    if ( (nuevaAbrev && abrev === nuevaAbrev.toLowerCase()) || 
+                         (keywordNuevaUnidad && text.includes(keywordNuevaUnidad)) ) {
+                        
+                        $(this).prop('selected', true);
+                        unitFound = true;
+                        return false; 
+                    }
+                });
+
+                if (unitFound) {
+                    $('#smartConversionAlert').remove();
+                    // Importante: disparar change en AMBOS para actualizar UI dependiente
+                    $('#unidadmedidaid').trigger('change');
+                    $('#cantidad').trigger('change');
+                } else {
+                    alert('No se encontró la unidad de medida destino en el sistema.');
+                    $('#smartConversionAlert').remove();
+                }
+            });
+        }
+
+        $('#cantidad, #unidadmedidaid').on('change keyup blur', function() {
+            checkSmartConversion();
+        });
     });
-});
 </script>
 @endpush

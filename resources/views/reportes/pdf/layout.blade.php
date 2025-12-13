@@ -1,97 +1,224 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
-    <title>Reporte - AgroNexus</title>
+    <title>Reporte AgroNexus</title>
     <style>
+        @page {
+            margin: 100px 25px 60px 25px;
+            /* Margen para Header y Footer fijos */
+        }
+
         body {
-            font-family: sans-serif;
-            font-size: 12px;
-            color: #333;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            color: #2c3e50;
+            line-height: 1.4;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 10px;
+        /* Branding Colors */
+        :root {
+            --primary: #2c5530;
+            /* Verde AgroNexus */
+            --secondary: #4a7c59;
+            /* Verde Claro */
+            --accent: #e67e22;
+            /* Naranja para totales/alertas */
+            --light: #f8f9fa;
+            --border: #dee2e6;
         }
 
-        .header h1 {
-            color: #2E7D32;
+        /* Header Fijo */
+        header {
+            position: fixed;
+            top: -80px;
+            left: 0;
+            right: 0;
+            height: 70px;
+            border-bottom: 2px solid #2c5530;
+        }
+
+        header .logo {
+            float: left;
+            width: 200px;
+        }
+
+        header .logo h1 {
             margin: 0;
+            color: #2c5530;
             font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .header p {
+        header .logo span {
+            color: #4a7c59;
+            font-weight: 300;
+        }
+
+        header .company-info {
+            float: right;
+            text-align: right;
+            font-size: 9px;
+            color: #7f8c8d;
+            padding-top: 5px;
+        }
+
+        /* Footer Fijo */
+        footer {
+            position: fixed;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            border-top: 1px solid #dee2e6;
+            color: #7f8c8d;
+            font-size: 9px;
+            text-align: center;
+            padding-top: 10px;
+        }
+
+        footer .page-number:after {
+            content: "Página " counter(page);
+        }
+
+        /* Títulos de Reporte */
+        .report-title {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 0;
+        }
+
+        .report-title h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #2c5530;
+            text-transform: uppercase;
+        }
+
+        .report-title p {
             margin: 5px 0 0;
+            font-size: 12px;
             color: #666;
         }
 
-        .info {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
+        /* Tarjetas de Resumen (KPIs) */
+        .summary-cards {
+            width: 100%;
+            margin-bottom: 25px;
+            border-spacing: 10px 0;
+            /* Espacio entre celdas */
+            border-collapse: separate;
         }
 
-        table {
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .card .label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .card .value {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c5530;
+        }
+
+        /* Tablas */
+        table.data-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
 
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+        table.data-table th,
+        table.data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
         }
 
-        th {
-            background-color: #4CAF50;
+        table.data-table th {
+            background-color: #2c5530;
             color: white;
             font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9px;
+            vertical-align: middle;
         }
 
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        table.data-table tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 0;
+        table.data-table td.numeric {
+            text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+            /* Alineación numérica mejorada */
+        }
+
+        /* Totales Finales */
+        .total-section {
             width: 100%;
-            text-align: center;
-            font-size: 10px;
-            color: #999;
-            border-top: 1px solid #ddd;
-            padding-top: 5px;
-        }
-
-        .totals {
             margin-top: 20px;
             text-align: right;
-            font-size: 14px;
+        }
+
+        .total-box {
+            display: inline-block;
+            background: #2c5530;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .total-box span {
+            display: block;
+        }
+
+        .total-label {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
+        .total-value {
+            font-size: 16px;
             font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>AgroNexus</h1>
-        <p>Sistema de Gestión Agrícola</p>
-    </div>
 
-    <div class="content">
+    <header>
+        <div class="logo">
+            <h1>Agro<span>Nexus</span></h1>
+        </div>
+        <div class="company-info">
+            <p>Sistema de Gestión Integral</p>
+            <p>Generado por: {{ auth()->user()->nombre ?? 'Sistema' }}</p>
+            <p>{{ now()->format('d/m/Y H:i A') }}</p>
+        </div>
+    </header>
+
+    <footer>
+        <span class="page-number"></span> | AgroNexus &copy; {{ date('Y') }} - Documento Confidencial
+    </footer>
+
+    <main>
         @yield('content')
-    </div>
+    </main>
 
-    <div class="footer">
-        <p>Generado el {{ now()->format('d/m/Y H:i:s') }} - AgroNexus Reportes</p>
-    </div>
 </body>
 
 </html>

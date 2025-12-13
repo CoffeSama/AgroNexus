@@ -209,7 +209,7 @@
     <!-- Top Clientes y Tabla -->
     <div class="row">
         <div class="col-md-4">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-trophy mr-2 text-warning"></i>Top Clientes</h3>
                 </div>
@@ -233,7 +233,7 @@
         </div>
 
         <div class="col-md-8">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title"><i class="fas fa-list mr-2"></i>Detalle de Ventas</h3>
                     <div>

@@ -2,157 +2,109 @@
 
 @section('content')
 
-<div class="container">
+    <div class="container">
 
-    {{-- MENSAJES --}}
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
+        {{-- MENSAJES --}}
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
 
-
-    {{-- ========================================================= --}}
-    {{-- TABLA DE USUARIOS --}}
-    {{-- ========================================================= --}}
-    <div class="card mb-5">
-        <div class="card-header d-flex justify-content-between">
-            <h4>Usuarios</h4>
-            <a href="{{ route('gestion.index') }}" class="btn btn-primary">
-                Crear Nuevo Usuario
-            </a>
-        </div>
-
-        <div class="card-body">
-
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre completo</th>
-                        <th>Email</th>
-                        <th>Usuario</th>
-                        <th>Teléfono</th>
-                        <th>Rol</th>
-                        <th>Activo</th>
-                        <th width="150">Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                @foreach($usuarios as $usuario)
-                    <tr>
-                        <td>{{ $usuario->usuarioid }}</td>
-                        <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
-                        <td>{{ $usuario->email }}</td>
-                        <td>{{ $usuario->nombreusuario }}</td>
-                        <td>{{ $usuario->telefono }}</td>
-
-                        <td>
-                            {{ optional($usuario->roles->first())->nombre ?? 'Sin rol' }}
-                        </td>
-
-                        <td>{{ $usuario->activo ? 'Sí' : 'No' }}</td>
-
-                        <td>
-
-                            {{-- BOTÓN EDITAR --}}
-                            <a href="{{ url('gestion-usuarios?editarUsuario=' . $usuario->usuarioid) }}"
-                               class="btn btn-warning btn-sm">
-                                Editar
-                            </a>
-
-                            {{-- BOTÓN ELIMINAR --}}
-                            <form action="{{ route('gestion.usuario.destroy', $usuario) }}"
-                                  method="POST"
-                                  class="d-inline">
-                                @csrf
-                                @method('DELETE')
-
-                                <button class="btn btn-danger btn-sm"
-                                        onclick="return confirm('¿Eliminar usuario?')">
-                                    Eliminar
-                                </button>
-                            </form>
-
-                        </td>
-                    </tr>
-
-                @endforeach
-                </tbody>
-            </table>
-
-            {{ $usuarios->links() }}
-
-        </div>
-    </div>
+        @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
 
+        {{-- ========================================================= --}}
+        {{-- TABLA DE USUARIOS --}}
+        {{-- ========================================================= --}}
+        <div class="card mb-5">
+            <div class="card-header d-flex justify-content-between">
+                <h4>Usuarios</h4>
+                <a href="{{ route('gestion.index') }}#userForm" class="btn btn-primary">
+                    Crear Nuevo Usuario
+                </a>
+            </div>
 
-    {{-- ========================================================= --}}
-    {{-- TABLA DE ROLES --}}
-    {{-- ========================================================= --}}
-    <div class="card mb-5">
-        <div class="card-header d-flex justify-content-between">
-            <h4>Roles</h4>
-            <a href="{{ route('gestion.index') }}" class="btn btn-success">
-                Crear Nuevo Rol
-            </a>
-        </div>
+            <div class="card-body">
 
-        <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre completo</th>
+                            <th>Email</th>
+                            <th>Usuario</th>
+                            <th>Teléfono</th>
+                            <th>Rol (Spatie)</th>
+                            <th>Activo</th>
+                            <th width="150">Acciones</th>
+                        </tr>
+                    </thead>
 
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th width="150">Acciones</th>
-                    </tr>
-                </thead>
+                    <tbody>
+                        @foreach($usuarios as $usuario)
+                            <tr>
+                                <td>{{ $usuario->usuarioid }}</td>
+                                <td>{{ $usuario->nombre }} {{ $usuario->apellido }}</td>
+                                <td>{{ $usuario->email }}</td>
+                                <td>{{ $usuario->nombreusuario }}</td>
+                                <td>{{ $usuario->telefono }}</td>
 
-                <tbody>
-                @foreach($roles as $rol)
-                    <tr>
-                        <td>{{ $rol->rolid }}</td>
-                        <td>{{ $rol->nombre }}</td>
-                        <td>{{ $rol->descripcion }}</td>
+                                <td>
+                                    {{-- Spatie usa 'roles' relationship --}}
+                                    @if($usuario->roles->isNotEmpty())
+                                        @foreach($usuario->roles as $role)
+                                            <span class="badge badge-info">{{ $role->name }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="badge badge-secondary">Sin rol</span>
+                                    @endif
+                                </td>
 
-                        <td>
-                            <a href="{{ url('gestion-usuarios?editarRol=' . $rol->rolid) }}"
-                               class="btn btn-warning btn-sm">
-                                Editar
-                            </a>
+                                <td>{{ $usuario->activo ? 'Sí' : 'No' }}</td>
 
-                            <form action="{{ route('gestion.rol.destroy', $rol) }}"
-                                  method="POST"
-                                  class="d-inline">
-                                @csrf
-                                @method('DELETE')
+                                <td>
 
-                                <button class="btn btn-danger btn-sm"
-                                        onclick="return confirm('¿Eliminar rol?')">
-                                    Eliminar
-                                </button>
-                            </form>
+                                    {{-- BOTÓN EDITAR --}}
+                                    <a href="{{ url('gestion-usuarios?editarUsuario=' . $usuario->usuarioid) }}"
+                                        class="btn btn-warning btn-sm">
+                                        Editar
+                                    </a>
 
-                        </td>
-                    </tr>
+                                    {{-- BOTÓN ELIMINAR --}}
+                                    <form action="{{ route('gestion.usuario.destroy', $usuario) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
 
-                @endforeach
-                </tbody>
-            </table>
+                                        <button class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar usuario?')">
+                                            Eliminar
+                                        </button>
+                                    </form>
+
+                                </td>
+                            </tr>
+
+                        @endforeach
+                    </tbody>
+                </table>
+
+                {{ $usuarios->links() }}
 
         </div>
     </div>
-
-
-
 
 
     {{-- ========================================================= --}}
     {{-- FORMULARIO UNIFICADO CREAR / EDITAR USUARIO --}}
     {{-- ========================================================= --}}
-    <div class="card mt-5">
+    <div class="card mt-5 mb-5" id="userForm">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">
                 {{ $editarUsuario ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}
@@ -176,7 +128,7 @@
                         <label>Nombre</label>
                         <input class="form-control"
                                name="nombre"
-                               value="{{ $editarUsuario->nombre ?? '' }}"
+                               value="{{ $editarUsuario->nombre ?? old('nombre') }}"
                                required>
                     </div>
 
@@ -184,7 +136,7 @@
                         <label>Apellido</label>
                         <input class="form-control"
                                name="apellido"
-                               value="{{ $editarUsuario->apellido ?? '' }}"
+                               value="{{ $editarUsuario->apellido ?? old('apellido') }}"
                                required>
                     </div>
                 </div>
@@ -193,19 +145,19 @@
                 <input class="form-control"
                        type="email"
                        name="email"
-                       value="{{ $editarUsuario->email ?? '' }}"
+                       value="{{ $editarUsuario->email ?? old('email') }}"
                        required>
 
                 <label class="mt-2">Nombre de usuario</label>
                 <input class="form-control"
                        name="nombreusuario"
-                       value="{{ $editarUsuario->nombreusuario ?? '' }}"
+                       value="{{ $editarUsuario->nombreusuario ?? old('nombreusuario') }}"
                        required>
 
                 <label class="mt-2">Teléfono</label>
                 <input class="form-control"
                        name="telefono"
-                       value="{{ $editarUsuario->telefono ?? '' }}">
+                       value="{{ $editarUsuario->telefono ?? old('telefono') }}">
 
                 <label class="mt-2">
                     Contraseña
@@ -217,23 +169,24 @@
                        type="password"
                        name="passwordhash">
 
-                <label class="mt-2">Rol</label>
+                <label class="mt-2">Rol (Asignación)</label>
                 <select name="rolid" class="form-control">
                     <option value="">Sin Rol</option>
                     @foreach($roles as $rol)
-                        <option value="{{ $rol->rolid }}"
-                            @if($editarUsuario && optional($editarUsuario->roles->first())->rolid == $rol->rolid)
+                        <option value="{{ $rol->id }}"
+                            @if(old('rolid') == $rol->id) selected @endif
+                            @if($editarUsuario && $editarUsuario->roles->contains('id', $rol->id))
                                 selected
                             @endif>
-                            {{ $rol->nombre }}
+                            {{ $rol->name }}
                         </option>
                     @endforeach
                 </select>
 
                 <label class="mt-2">Activo</label>
                 <select name="activo" class="form-control">
-                    <option value="1" @if($editarUsuario && $editarUsuario->activo) selected @endif>Si</option>
-                    <option value="0" @if($editarUsuario && !$editarUsuario->activo) selected @endif>No</option>
+                    <option value="1" @if(old('activo', $editarUsuario->activo ?? 1) == 1) selected @endif>Si</option>
+                    <option value="0" @if(old('activo', $editarUsuario->activo ?? 1) == 0) selected @endif>No</option>
                 </select>
 
                 <button class="btn btn-success mt-3">
@@ -251,54 +204,5 @@
         </div>
     </div>
 
-
-
-
-    {{-- ========================================================= --}}
-    {{-- FORMULARIO UNIFICADO CREAR / EDITAR ROL --}}
-    {{-- ========================================================= --}}
-    <div class="card mt-4">
-        <div class="card-header bg-secondary text-white">
-            <h4 class="mb-0">
-                {{ $editarRol ? 'Editar Rol' : 'Crear Nuevo Rol' }}
-            </h4>
-        </div>
-
-        <div class="card-body">
-
-            <form method="POST"
-                  action="{{ $editarRol
-                            ? route('gestion.rol.update', $editarRol)
-                            : route('gestion.rol.store') }}">
-
-                @csrf
-                @if($editarRol)
-                    @method('PUT')
-                @endif
-
-                <label>Nombre del Rol</label>
-                <input class="form-control"
-                       name="nombre"
-                       value="{{ $editarRol->nombre ?? '' }}"
-                       required>
-
-                <label class="mt-2">Descripción</label>
-                <textarea class="form-control" name="descripcion">{{ $editarRol->descripcion ?? '' }}</textarea>
-
-                <button class="btn btn-success mt-3">
-                    {{ $editarRol ? 'Actualizar Rol' : 'Crear Rol' }}
-                </button>
-
-                @if($editarRol)
-                    <a href="{{ route('gestion.index') }}" class="btn btn-secondary mt-3">
-                        Cancelar Edición
-                    </a>
-                @endif
-
-            </form>
-
-        </div>
     </div>
-</div>
-
 @endsection

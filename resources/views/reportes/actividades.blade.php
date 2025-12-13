@@ -199,7 +199,7 @@
     <!-- Gráficos -->
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-chart-bar mr-2"></i>Actividades por Día</h3>
                 </div>
@@ -211,7 +211,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Por Tipo</h3>
                 </div>
@@ -227,7 +227,7 @@
     <!-- Actividades por tipo y tabla -->
     <div class="row">
         <div class="col-md-4">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-list-alt mr-2"></i>Resumen por Tipo</h3>
                 </div>
@@ -271,7 +271,7 @@
         </div>
 
         <div class="col-md-8">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title"><i class="fas fa-clipboard-list mr-2"></i>Detalle de Actividades</h3>
                     <div>

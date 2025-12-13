@@ -25,12 +25,12 @@ class LoteInsumoController extends Controller
     {
         // Solo lotes con usuario asignado
         $lotes = Lote::with('usuario')->get();
-        
+
         // Solo insumos con stock disponible
         $insumos = Insumo::with('unidadMedida')
             ->where('stock', '>', 0)
             ->get();
-        
+
         $estados = EstadoLoteInsumo::all();
 
         return view('lote_insumos.create', compact('lotes', 'insumos', 'estados'));
@@ -51,7 +51,7 @@ class LoteInsumoController extends Controller
         try {
             // Obtener el lote para sacar el usuario responsable
             $lote = Lote::findOrFail($data['loteid']);
-            
+
             // Obtener el insumo
             $insumo = Insumo::findOrFail($data['insumoid']);
 
@@ -85,7 +85,7 @@ class LoteInsumoController extends Controller
 
             // Mensaje de éxito con información del stock
             $mensaje = "Aplicación registrada. Se descontaron {$data['cantidadusada']} {$insumo->unidadMedida->abreviatura} de {$insumo->nombre}.";
-            
+
             // Alerta si el stock quedó bajo
             if ($insumo->stock <= $insumo->stockminimo) {
                 $mensaje .= " ⚠️ ALERTA: Stock bajo ({$insumo->stock} {$insumo->unidadMedida->abreviatura})";
@@ -110,8 +110,9 @@ class LoteInsumoController extends Controller
         $lotes = Lote::with('usuario')->get();
         $insumos = Insumo::with('unidadMedida')->get();
         $estados = EstadoLoteInsumo::all();
+        $usuarios = \App\Models\Usuario::all(); // Fix: Fetch users
 
-        return view('lote_insumos.edit', compact('loteInsumo', 'lotes', 'insumos', 'estados'));
+        return view('lote_insumos.edit', compact('loteInsumo', 'lotes', 'insumos', 'estados', 'usuarios'));
     }
 
     public function update(Request $request, LoteInsumo $loteInsumo)
@@ -129,7 +130,7 @@ class LoteInsumoController extends Controller
         try {
             $lote = Lote::findOrFail($data['loteid']);
             $insumo = Insumo::findOrFail($data['insumoid']);
-            
+
             // Si cambió el insumo, devolver stock al anterior
             if ($loteInsumo->insumoid != $data['insumoid']) {
                 $insumoAnterior = Insumo::find($loteInsumo->insumoid);
@@ -137,28 +138,28 @@ class LoteInsumoController extends Controller
                     $insumoAnterior->stock += $loteInsumo->cantidadusada;
                     $insumoAnterior->save();
                 }
-                
+
                 // Validar stock del nuevo insumo
                 if ($insumo->stock < $data['cantidadusada']) {
                     return back()->withErrors([
                         'cantidadusada' => "Stock insuficiente del nuevo insumo. Disponible: {$insumo->stock}"
                     ])->withInput();
                 }
-                
+
                 $insumo->stock -= $data['cantidadusada'];
             } else {
                 // Mismo insumo: ajustar diferencia
                 $diferencia = $data['cantidadusada'] - $loteInsumo->cantidadusada;
-                
+
                 if ($diferencia > 0 && $insumo->stock < $diferencia) {
                     return back()->withErrors([
                         'cantidadusada' => "Stock insuficiente para aumentar. Disponible: {$insumo->stock}"
                     ])->withInput();
                 }
-                
+
                 $insumo->stock -= $diferencia;
             }
-            
+
             $insumo->save();
 
             // Calcular nuevo costo total

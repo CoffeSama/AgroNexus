@@ -22,7 +22,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
@@ -53,34 +53,29 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'nombre'        => 'required|string|max:100',
-            'apellido'      => 'required|string|max:100',
-            'email'         => 'required|email|max:100|unique:usuario,email',
+            'nombre' => 'required|string|max:100',
+            'apellido' => 'required|string|max:100',
+            'email' => 'required|email|max:100|unique:usuario,email',
             'nombreusuario' => 'required|string|max:100|unique:usuario,nombreusuario',
-            'telefono'      => 'nullable|string|max:20',
-            'password'      => 'required|string|min:6|confirmed',
+            'telefono' => 'nullable|string|max:20',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         $usuario = Usuario::create([
-            'nombre'        => $data['nombre'],
-            'apellido'      => $data['apellido'],
-            'email'         => $data['email'],
+            'nombre' => $data['nombre'],
+            'apellido' => $data['apellido'],
+            'email' => $data['email'],
             'nombreusuario' => $data['nombreusuario'],
-            'telefono'      => $data['telefono'] ?? null,
-            'passwordhash'  => Hash::make($data['password']),
-            'imagenurl'     => 'https://bsmobatqfjmrfiipkimu.supabase.co/storage/v1/object/public/agronexus-bucket/usuarios/userDefault.png',
-            'activo'        => true,
+            'telefono' => $data['telefono'] ?? null,
+            'passwordhash' => Hash::make($data['password']),
+            'imagenurl' => 'https://bsmobatqfjmrfiipkimu.supabase.co/storage/v1/object/public/agronexus-bucket/usuarios/userDefault.png',
+            'activo' => true,
             'fecharegistro' => now(),
         ]);
 
-        // Asignar rol por defecto "administrador" si existe
-        $rolAdministrador = Rol::where('nombre', 'administrador')->first();
-        if ($rolAdministrador) {
-            UsuarioRol::create([
-                'usuarioid' => $usuario->usuarioid,
-                'rolid'     => $rolAdministrador->rolid,
-            ]);
-        }
+        // Asignar rol por defecto "agricultor"
+        $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'agricultor']);
+        $usuario->assignRole($role);
 
         // Loguear automáticamente al usuario
         Auth::login($usuario);

@@ -195,6 +195,72 @@ $(document).ready(function() {
         const total = cantidad * precio;
         $('#totalEstimado').text('Bs. ' + total.toFixed(2));
     }
+
+    // SMART UNIT CONVERSION
+    function checkSmartConversion() {
+        const cantidadInput = $('#cantidad');
+        const unidadSelect = $('#unidadmedidaid');
+        const cantidad = parseFloat(cantidadInput.val()) || 0;
+        const unidadOption = unidadSelect.find('option:selected');
+        const unidadNombre = unidadOption.text().toLowerCase();
+        
+        // Limpiar sugerencias
+        $('#smartConversionAlert').remove();
+
+        // KG -> TON
+        if (unidadNombre.includes('kilo') || unidadNombre.includes('kg')) {
+            if (cantidad >= 1000) {
+                const toneladas = cantidad / 1000;
+                mostrarSugerenciaConversion(cantidadInput, 'Ton', toneladas, 'tonelada');
+            }
+        }
+        // GRAMOS -> KG
+        else if (unidadNombre.includes('gramo') || unidadNombre.includes(' gr')) {
+            if (cantidad >= 1000) {
+                const kilos = cantidad / 1000;
+                mostrarSugerenciaConversion(cantidadInput, 'Kg', kilos, 'kilo');
+            }
+        }
+    }
+
+    function mostrarSugerenciaConversion(inputElement, nuevaUnidadTexto, nuevoValor, keywordNuevaUnidad) {
+        const alertHtml = `
+            <div id="smartConversionAlert" class="alert alert-info p-2 mt-2 shadow-sm d-flex justify-content-between align-items-center" style="border-radius: 8px;">
+                <div>
+                    <i class="fas fa-lightbulb text-info mr-2"></i>
+                    <strong>Sugerencia:</strong> ¿Convertir a <strong>${nuevoValor} ${nuevaUnidadTexto}</strong>?
+                </div>
+                <button type="button" class="btn btn-sm btn-light border font-weight-bold" id="btnAplicarConversion">
+                    Sí, cambiar
+                </button>
+            </div>
+        `;
+        
+        if ($('#smartConversionAlert').length === 0) {
+            inputElement.closest('.form-group').append(alertHtml);
+        }
+
+        $('#btnAplicarConversion').on('click', function(e) {
+            e.preventDefault();
+            $('#cantidad').val(nuevoValor);
+            
+            // Buscar y seleccionar nueva unidad
+            $('#unidadmedidaid option').each(function() {
+                const text = $(this).text().toLowerCase();
+                if (text.includes(keywordNuevaUnidad)) {
+                    $(this).prop('selected', true);
+                    return false; 
+                }
+            });
+
+            $('#smartConversionAlert').remove();
+            calcularTotal(); // Recalcular total si es venta
+        });
+    }
+
+    $('#cantidad, #unidadmedidaid').on('change keyup blur', function() {
+        checkSmartConversion();
+    });
 });
 </script>
 @endpush

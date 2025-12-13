@@ -16,15 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class ProduccionController extends Controller
 {
-    // Mapeo de cultivo a almacén (cultivoid => nombre del almacén)
-    private $cultivoAlmacenMap = [
-        1 => 'Silo Maíz',      // maíz
-        2 => 'Silo Soya',      // soya
-        3 => 'Silo Trigo',     // trigo
-        4 => 'Bodega Papa',    // papa
-        5 => 'Silo Arroz',     // arroz
-        6 => 'Bodega Caña',    // caña de azúcar
-    ];
+
 
     private function convertirAKg(float $cantidad, ?UnidadMedida $unidad): float
     {
@@ -37,24 +29,24 @@ class ProduccionController extends Controller
 
         // Puedes ajustar este mapa según tus unidades reales
         $factores = [
-            'kg'         => 1,
-            'kilogramo'  => 1,
+            'kg' => 1,
+            'kilogramo' => 1,
             'kilogramos' => 1,
 
-            'g'          => 0.001,
-            'gr'         => 0.001,
-            'gramo'      => 0.001,
-            'gramos'     => 0.001,
+            'g' => 0.001,
+            'gr' => 0.001,
+            'gramo' => 0.001,
+            'gramos' => 0.001,
 
-            't'          => 1000,
-            'tn'         => 1000,
-            'ton'        => 1000,
-            'tonelada'   => 1000,
-            'toneladas'  => 1000,
+            't' => 1000,
+            'tn' => 1000,
+            'ton' => 1000,
+            'tonelada' => 1000,
+            'toneladas' => 1000,
 
-            'qq'         => 46,
-            'quintal'    => 46,
-            'quintales'  => 46,
+            'qq' => 46,
+            'quintal' => 46,
+            'quintales' => 46,
         ];
 
         $factor = $factores[$abbr] ?? 1; // si no lo conoce, lo toma como kg
@@ -75,14 +67,14 @@ class ProduccionController extends Controller
     {
         // Solo lotes en estado "en producción" pueden ser cosechados
         $lotes = Lote::with(['usuario', 'cultivo', 'estadoTipo'])
-            ->whereHas('estadoTipo', function($q) {
+            ->whereHas('estadoTipo', function ($q) {
                 $q->where('nombre', 'en producción');
             })
             ->get();
-        
+
         // Solo unidades de peso para la cosecha
         $unidades = UnidadMedida::where('categoria', 'peso')->get();
-        
+
         // Almacenes activos con su ocupación actual
         $almacenes = Almacen::with(['tipoAlmacen', 'unidadMedida', 'almacenamientos'])
             ->where('activo', true)
@@ -94,12 +86,12 @@ class ProduccionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'loteid'         => 'required|exists:lote,loteid',
-            'cantidad'       => 'required|numeric|min:0.01',
+            'loteid' => 'required|exists:lote,loteid',
+            'cantidad' => 'required|numeric|min:0.01',
             'unidadmedidaid' => 'required|exists:unidadmedida,unidadmedidaid',
-            'observaciones'  => 'nullable|string',
+            'observaciones' => 'nullable|string',
             'enviar_almacen' => 'nullable|boolean',
-            'almacenid'      => 'nullable|exists:almacen,almacenid',
+            'almacenid' => 'nullable|exists:almacen,almacenid',
         ]);
 
         DB::beginTransaction();
@@ -119,31 +111,30 @@ class ProduccionController extends Controller
 
             // Crear la producción con fecha actual
             $produccion = Produccion::create([
-                'loteid'              => $data['loteid'],
-                'cantidad'            => $data['cantidad'],
-                'unidadmedidaid'      => $data['unidadmedidaid'],
-                'fechacosecha'        => now()->toDateString(),
+                'loteid' => $data['loteid'],
+                'cantidad' => $data['cantidad'],
+                'unidadmedidaid' => $data['unidadmedidaid'],
+                'fechacosecha' => now()->toDateString(),
                 'destinoproduccionid' => $destinoAlmacenamiento->destinoproduccionid ?? null,
-                'observaciones'       => $data['observaciones'],
+                'observaciones' => $data['observaciones'],
             ]);
 
             // Si se seleccionó enviar a almacén
             $mensajeAlmacen = '';
             $almacen = null;
 
-            if ($request->enviar_almacen && $request->almacenid) {
+            if ($request->filled('enviar_almacen') && $request->filled('almacenid')) {
                 // Usar almacén seleccionado manualmente
                 $almacen = Almacen::find($request->almacenid);
             }
 
-            // Si hay almacén, crear el registro de almacenamiento
             // Si hay almacén, crear el registro de almacenamiento
             if ($almacen) {
                 // ================================
                 // 1) Capacidad del almacén en KG
                 // ================================
                 $unidadAlmacen = $almacen->unidadMedida; // relación unidadMedida en modelo Almacen
-                $capacidadKg   = $this->convertirAKg((float) ($almacen->capacidad ?? 0), $unidadAlmacen);
+                $capacidadKg = $this->convertirAKg((float) ($almacen->capacidad ?? 0), $unidadAlmacen);
 
                 // ======================================
                 // 2) Ocupación actual del almacén en KG
@@ -162,7 +153,7 @@ class ProduccionController extends Controller
                 // 3) Nueva cantidad a ingresar en KG
                 // =====================================
                 $unidadProduccion = UnidadMedida::find($data['unidadmedidaid']);
-                $nuevaCantidadKg  = $this->convertirAKg((float) $data['cantidad'], $unidadProduccion);
+                $nuevaCantidadKg = $this->convertirAKg((float) $data['cantidad'], $unidadProduccion);
 
                 $disponibleKg = $capacidadKg - $ocupadoKg;
 
@@ -176,12 +167,12 @@ class ProduccionController extends Controller
 
                 // Si pasa la validación, guardamos en la unidad que vino del formulario
                 ProduccionAlmacenamiento::create([
-                    'produccionid'   => $produccion->produccionid,
-                    'almacenid'      => $almacen->almacenid,
-                    'cantidad'       => $data['cantidad'],
+                    'produccionid' => $produccion->produccionid,
+                    'almacenid' => $almacen->almacenid,
+                    'cantidad' => $data['cantidad'],
                     'unidadmedidaid' => $data['unidadmedidaid'],
-                    'fechaentrada'   => now(),
-                    'observaciones'  => "Cosecha del lote {$lote->nombre}",
+                    'fechaentrada' => now(),
+                    'observaciones' => "Cosecha del lote {$lote->nombre}",
                 ]);
 
                 $mensajeAlmacen = " y almacenado en {$almacen->nombre}";
@@ -231,7 +222,7 @@ class ProduccionController extends Controller
 
     public function edit(Produccion $produccion)
     {
-        $lotes    = Lote::with(['usuario', 'cultivo'])->get();
+        $lotes = Lote::with(['usuario', 'cultivo'])->get();
         $destinos = DestinoProduccion::all();
         $unidades = UnidadMedida::where('categoria', 'peso')->get();
 
@@ -241,12 +232,12 @@ class ProduccionController extends Controller
     public function update(Request $request, Produccion $produccion)
     {
         $data = $request->validate([
-            'loteid'              => 'required|exists:lote,loteid',
-            'cantidad'            => 'required|numeric|min:0.01',
-            'unidadmedidaid'      => 'required|exists:unidadmedida,unidadmedidaid',
-            'fechacosecha'        => 'required|date',
+            'loteid' => 'required|exists:lote,loteid',
+            'cantidad' => 'required|numeric|min:0.01',
+            'unidadmedidaid' => 'required|exists:unidadmedida,unidadmedidaid',
+            'fechacosecha' => 'required|date',
             'destinoproduccionid' => 'nullable|exists:destinoproduccion,destinoproduccionid',
-            'observaciones'       => 'nullable|string',
+            'observaciones' => 'nullable|string',
         ]);
 
         $produccion->update($data);

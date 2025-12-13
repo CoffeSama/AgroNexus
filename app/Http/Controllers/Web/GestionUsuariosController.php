@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Usuario;
-use App\Models\Rol;
-use App\Models\UsuarioRol;
+use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class GestionUsuariosController extends Controller
 {
@@ -17,7 +17,7 @@ class GestionUsuariosController extends Controller
     public function index()
     {
         $usuarios = Usuario::with(['roles'])->orderBy('usuarioid', 'desc')->paginate(15);
-        $roles = Rol::orderBy('rolid', 'asc')->get();
+        $roles = Role::orderBy('name', 'asc')->get();
         $editarUsuario = null;
         $editarRol = null;
         if (request()->has('editarUsuario')) {
@@ -25,10 +25,10 @@ class GestionUsuariosController extends Controller
         }
 
         if (request()->has('editarRol')) {
-            $editarRol = Rol::find(request('editarRol'));
+            $editarRol = Role::find(request('editarRol'));
         }
 
-        return view('usuarios.index', compact('usuarios','roles','editarUsuario','editarRol'));
+        return view('usuarios.index', compact('usuarios', 'roles', 'editarUsuario', 'editarRol'));
     }
 
     // =========================================================
@@ -47,7 +47,7 @@ class GestionUsuariosController extends Controller
             'imagenurl' => 'nullable|string|max:250',
             'informacionadicional' => 'nullable|string',
             'activo' => 'required|boolean',
-            'rolid' => 'nullable|exists:rol,rolid'
+            'rolid' => 'nullable|exists:roles,id'
         ]);
 
         // Hashear password
@@ -55,11 +55,12 @@ class GestionUsuariosController extends Controller
 
         $usuario = Usuario::create($data);
 
+        // Asignar rol con Spatie
         if ($request->filled('rolid')) {
-            UsuarioRol::create([
-                'usuarioid' => $usuario->usuarioid,
-                'rolid' => $request->rolid
-            ]);
+            $rol = Role::findById($request->rolid);
+            if ($rol) {
+                $usuario->assignRole($rol);
+            }
         }
 
         return redirect()->route('gestion.index')->with('success', 'Usuario creado.');
@@ -77,7 +78,7 @@ class GestionUsuariosController extends Controller
             'imagenurl' => 'nullable|string|max:250',
             'informacionadicional' => 'nullable|string',
             'activo' => 'required|boolean',
-            'rolid' => 'nullable|exists:rol,rolid'
+            'rolid' => 'nullable|exists:roles,id'
         ]);
 
         // Si viene nueva contraseña, la hasheamos; si no, la quitamos del array
@@ -89,11 +90,14 @@ class GestionUsuariosController extends Controller
 
         $usuario->update($data);
 
+        // Sincronizar rol con Spatie
         if ($request->filled('rolid')) {
-            UsuarioRol::updateOrCreate(
-                ['usuarioid' => $usuario->usuarioid],
-                ['rolid' => $request->rolid]
-            );
+            $rol = Role::findById($request->rolid);
+            if ($rol) {
+                $usuario->syncRoles([$rol]);
+            }
+        } else {
+            $usuario->syncRoles([]);
         }
 
         return redirect()->route('gestion.index')->with('success', 'Usuario actualizado.');
@@ -101,45 +105,42 @@ class GestionUsuariosController extends Controller
 
     public function destroyUsuario(Usuario $usuario)
     {
-        UsuarioRol::where('usuarioid', $usuario->usuarioid)->delete();
         $usuario->delete();
 
         return redirect()->route('gestion.index')->with('success', 'Usuario eliminado.');
     }
 
     // =========================================================
-    // ROLES CRUD
+    // ROLES CRUD (Spatie)
     // =========================================================
 
     public function storeRol(Request $request)
     {
         $data = $request->validate([
-            'nombre' => 'required|string|max:50',
-            'descripcion' => 'nullable|string|max:200',
+            'nombre' => 'required|string|max:50|unique:roles,name',
         ]);
 
-        Rol::create($data);
+        // Crear Rol Spatie
+        Role::create(['name' => $data['nombre']]);
 
-        return redirect()->route('gestion.index')->with('success', 'Rol creado.');
+        return redirect()->route('gestion.index')->with('success', 'Rol creado correctamente.');
     }
 
-    public function updateRol(Request $request, Rol $rol)
+    public function updateRol(Request $request, Role $role)
     {
         $data = $request->validate([
-            'nombre' => 'required|string|max:50',
-            'descripcion' => 'nullable|string|max:200',
+            'nombre' => ['required', 'string', 'max:50', Rule::unique('roles', 'name')->ignore($role->id)],
         ]);
 
-        $rol->update($data);
+        $role->update(['name' => $data['nombre']]);
 
-        return redirect()->route('gestion.index')->with('success', 'Rol actualizado.');
+        return redirect()->route('gestion.index')->with('success', 'Rol actualizado correctamente.');
     }
 
-    public function destroyRol(Rol $rol)
+    public function destroyRol(Role $role)
     {
-        UsuarioRol::where('rolid', $rol->rolid)->delete();
-        $rol->delete();
+        $role->delete();
 
-        return redirect()->route('gestion.index')->with('success', 'Rol eliminado.');
+        return redirect()->route('gestion.index')->with('success', 'Rol eliminado correctamente.');
     }
 }

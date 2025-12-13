@@ -205,7 +205,18 @@
 
         .production-chart-container {
             position: relative;
-            height: 300px;
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .production-chart-container canvas {
+            position: absolute !important;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .progress-group {
@@ -302,14 +313,14 @@
     <div class="row">
         <!-- Gráfico de Producción -->
         <div class="col-md-8">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-chart-line mr-2"></i>
                         Produccion de los Ultimos 6 Meses
                     </h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column">
                     <div class="production-chart-container">
                         <canvas id="productionChart"></canvas>
                     </div>
@@ -364,7 +375,7 @@
     <div class="row">
         <!-- Actividades Recientes -->
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-history mr-2"></i>
@@ -408,14 +419,14 @@
 
         <!-- Alertas del Sistema -->
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-bell mr-2"></i>
                         Alertas del Sistema
                     </h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column justify-content-center">
                     @forelse($insumosStockBajo as $insumo)
                         <div class="alert-item">
                             <div class="alert-icon">
@@ -423,11 +434,11 @@
                             </div>
                             <div class="alert-content">
                                 <h6>Stock bajo: {{ $insumo->nombre }}</h6>
-                                <small>Stock actual: {{ $insumo->stock }} | Minimo: {{ $insumo->stockminimo }}</small>
+                                <small>Stock actual: {{ $insumo->stock }} | Mirimo: {{ $insumo->stockminimo }}</small>
                             </div>
                         </div>
                     @empty
-                        <div class="text-center text-success py-3">
+                        <div class="text-center text-success py-3 my-auto">
                             <i class="fas fa-check-circle fa-2x mb-2"></i>
                             <p class="mb-0">No hay alertas pendientes</p>
                         </div>
@@ -441,7 +452,7 @@
     <div class="row">
         <!-- Estado Actual de Lotes -->
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-map mr-2"></i>
@@ -507,14 +518,14 @@
 
         <!-- Top Cultivos por Producción -->
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-trophy mr-2"></i>
                         Top Cultivos por Produccion
                     </h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column justify-content-around">
                     @php
                         $coloresProgress = ['success', 'warning', 'info', 'danger', 'primary'];
                         $maxProduccion = $topCultivos->max('total') ?: 1;
@@ -529,7 +540,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center text-muted py-3">
+                        <div class="text-center text-muted py-3 my-auto">
                             <i class="fas fa-chart-bar fa-2x mb-2"></i>
                             <p class="mb-0">No hay datos de produccion</p>
                         </div>

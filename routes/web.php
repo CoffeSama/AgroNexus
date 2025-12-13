@@ -28,8 +28,7 @@ use App\Http\Controllers\Web\TipoAlmacenController;
 use App\Http\Controllers\Web\AlmacenController;
 use App\Http\Controllers\Web\ProduccionAlmacenamientoController;
 
-// 🔹 Controlador de Transacciones
-use App\Http\Controllers\Web\TransaccionesController;
+
 
 // 🔹 Dashboard Controller
 use App\Http\Controllers\Web\DashboardController;
@@ -45,7 +44,7 @@ use App\Http\Controllers\Web\ExternalApiProxyController;
 
 // ======================================================
 // RUTAS PÚBLICAS (SIN LOGIN)
-// ======================================================
+
 
 // Página inicial -> redirige al login
 Route::get('/', function () {
@@ -61,9 +60,9 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// ======================================================
+
 // RUTAS PROTEGIDAS (REQUIEREN ESTAR LOGUEADO)
-// ======================================================
+
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -108,9 +107,9 @@ Route::middleware('auth')->group(function () {
     // ==============================
     Route::resource('pedidos', PedidoController::class);
 
-    // ==============================
+
     // GESTIÓN UNIFICADA DE USUARIOS
-    // ==============================
+
     Route::get('/gestion-usuarios', [GestionUsuariosController::class, 'index'])
         ->name('gestion.index');
 
@@ -128,15 +127,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/gestion-usuarios/rol', [GestionUsuariosController::class, 'storeRol'])
         ->name('gestion.rol.store');
 
-    Route::put('/gestion-usuarios/rol/{rol}', [GestionUsuariosController::class, 'updateRol'])
+    Route::put('/gestion-usuarios/rol/{role}', [GestionUsuariosController::class, 'updateRol'])
         ->name('gestion.rol.update');
 
-    Route::delete('/gestion-usuarios/rol/{rol}', [GestionUsuariosController::class, 'destroyRol'])
+    Route::delete('/gestion-usuarios/rol/{role}', [GestionUsuariosController::class, 'destroyRol'])
         ->name('gestion.rol.destroy');
 
-    // ==============================
+
     // REPORTES
-    // ==============================
+
     Route::prefix('reportes')->name('reportes.')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('index');
         Route::get('/ventas', [ReporteController::class, 'ventas'])->name('ventas');
@@ -147,9 +146,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/exportar/{tipo}', [ReporteController::class, 'exportar'])->name('exportar');
     });
 
-    // ==============================
+
     // ENVÍOS
-    // ==============================
+
     Route::prefix('envios')->name('envios.')->group(function () {
         Route::get('/mandar', fn() => view('envios.mandar-envio'))->name('mandar');
         Route::get('/seguimiento', fn() => view('envios.seguimiento'))->name('seguimiento');
@@ -175,38 +174,6 @@ Route::middleware('auth')->group(function () {
     });
 
     // ==============================
-    // TRANSACCIONES AGRÍCOLAS
+    // TRANSACCIONES AGRÍCOLAS - ELIMINADO
     // ==============================
-    Route::prefix('transacciones')->name('transacciones.')->group(function () {
-        // Dashboard
-        Route::get('/', [TransaccionesController::class, 'index'])->name('index');
-
-        // Siembra
-        Route::get('/siembra', [TransaccionesController::class, 'siembraCreate'])->name('siembra.create');
-        Route::post('/siembra', [TransaccionesController::class, 'siembraStore'])->name('siembra.store');
-
-        // Fertilización
-        Route::get('/fertilizacion', [TransaccionesController::class, 'fertilizacionCreate'])->name('fertilizacion.create');
-        Route::post('/fertilizacion', [TransaccionesController::class, 'fertilizacionStore'])->name('fertilizacion.store');
-
-        // Control de Plagas
-        Route::get('/control-plagas', [TransaccionesController::class, 'controlPlagasCreate'])->name('control-plagas.create');
-        Route::post('/control-plagas', [TransaccionesController::class, 'controlPlagasStore'])->name('control-plagas.store');
-
-        // Riego
-        Route::get('/riego', [TransaccionesController::class, 'riegoCreate'])->name('riego.create');
-        Route::post('/riego', [TransaccionesController::class, 'riegoStore'])->name('riego.store');
-
-        // Cosecha
-        Route::get('/cosecha', [TransaccionesController::class, 'cosechaCreate'])->name('cosecha.create');
-        Route::post('/cosecha', [TransaccionesController::class, 'cosechaStore'])->name('cosecha.store');
-
-        // Venta
-        Route::get('/venta', [TransaccionesController::class, 'ventaCreate'])->name('venta.create');
-        Route::post('/venta', [TransaccionesController::class, 'ventaStore'])->name('venta.store');
-
-        // AJAX endpoints
-        Route::get('/api/lote/{id}', [TransaccionesController::class, 'getLoteInfo'])->name('api.lote');
-        Route::get('/api/insumo/{id}', [TransaccionesController::class, 'getInsumoInfo'])->name('api.insumo');
-    });
 });

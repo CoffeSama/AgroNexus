@@ -36,17 +36,32 @@ class Usuario extends Authenticatable
     ];
 
     protected $casts = [
-        'usuarioid'        => 'integer',
-        'activo'           => 'boolean',
-        'fecharegistro'    => 'datetime',
-        'fechamodificacion'=> 'datetime',
-        'ultimologin'      => 'datetime',
+        'usuarioid' => 'integer',
+        'activo' => 'boolean',
+        'fecharegistro' => 'datetime',
+        'fechamodificacion' => 'datetime',
+        'ultimologin' => 'datetime',
     ];
 
-    public function getAuthPassword(){ return $this->passwordhash; }
+    public function getAuthPassword()
+    {
+        return $this->passwordhash;
+    }
 
-    public function lotes(){ return $this->hasMany(Lote::class,'usuarioid','usuarioid'); }
-    public function actividades(){ return $this->hasMany(Actividad::class,'usuarioid','usuarioid'); }
-    public function loteInsumos(){ return $this->hasMany(LoteInsumo::class,'usuarioid','usuarioid'); }
-    public function historialEstadosLote(){ return $this->hasMany(HistorialEstadoLote::class,'usuarioid','usuarioid'); }
+    public function lotes()
+    {
+        return $this->hasMany(Lote::class, 'usuarioid', 'usuarioid');
+    }
+    public function actividades()
+    {
+        return $this->hasMany(Actividad::class, 'usuarioid', 'usuarioid');
+    }
+    public function loteInsumos()
+    {
+        return $this->hasMany(LoteInsumo::class, 'usuarioid', 'usuarioid');
+    }
+    public function historialEstadosLote()
+    {
+        return $this->hasMany(HistorialEstadoLote::class, 'usuarioid', 'usuarioid');
+    }
 }
