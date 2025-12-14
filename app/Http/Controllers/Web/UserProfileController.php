@@ -25,12 +25,25 @@ class UserProfileController extends Controller
             'email' => ['required', 'email', 'max:100', Rule::unique('usuario', 'email')->ignore($user->usuarioid, 'usuarioid')],
             'telefono' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6|confirmed',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $user->nombre = $data['nombre'];
         $user->apellido = $data['apellido'];
         $user->email = $data['email'];
         $user->telefono = $data['telefono'];
+
+        // BASE64 STORAGE
+        if ($request->hasFile('imagen')) {
+            try {
+                $file = $request->file('imagen');
+                $mime = $file->getMimeType();
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $user->imagenurl = "data:$mime;base64,$base64";
+            } catch (\Exception $e) {
+                // Log error
+            }
+        }
 
         if ($request->filled('password')) {
             $user->passwordhash = Hash::make($data['password']);

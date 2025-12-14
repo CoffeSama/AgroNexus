@@ -26,7 +26,8 @@
                                     class="d-flex flex-column align-items-center text-center p-4 bg-light rounded shadow-sm">
                                     <div class="position-relative mb-3">
                                         <img class="profile-user-img img-fluid img-circle elevation-2"
-                                            src="{{ asset('images/user.png') }}" alt="Avatar"
+                                            src="{{ $user->imagenurl ? $user->imagenurl : asset('images/user.png') }}"
+                                            alt="Avatar"
                                             style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #28a745;">
                                         <div class="position-absolute bg-success rounded-circle d-flex align-items-center justify-content-center text-white"
                                             style="width: 35px; height: 35px; bottom: 0; right: 0; border: 2px solid white;">
@@ -97,7 +98,8 @@
                                     </div>
                                 @endif
 
-                                <form class="form-horizontal" method="POST" action="{{ route('profile.update') }}">
+                                <form class="form-horizontal" method="POST" action="{{ route('profile.update') }}"
+                                    enctype="multipart/form-data">
                                     @csrf
                                     @method('PUT')
 
@@ -160,6 +162,21 @@
                                                     name="telefono" value="{{ old('telefono', $user->telefono) }}"
                                                     placeholder="+591 ...">
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-12 mb-4">
+                                            <label for="imagen"
+                                                class="font-weight-bold small text-uppercase text-muted">Foto de
+                                                Perfil</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="imagen" name="imagen"
+                                                    accept="image/*">
+                                                <label class="custom-file-label" for="imagen">Seleccionar archivo...</label>
+                                            </div>
+                                            <small class="form-text text-muted mt-2">Formatos: JPG, PNG, JPEG. Máx
+                                                2MB.</small>
                                         </div>
                                     </div>
 
