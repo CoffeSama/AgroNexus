@@ -1290,12 +1290,12 @@
                 });
 
                 const html = `
-                                                                                            <div class="callout callout-info mb-2">
-                                                                                                <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
-                                                                                                <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
-                                                                                                <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
-                                                                                            </div>
-                                                                                        `;
+                                                                                                <div class="callout callout-info mb-2">
+                                                                                                    <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
+                                                                                                    <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
+                                                                                                    <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
+                                                                                                </div>
+                                                                                            `;
                 container.insertAdjacentHTML('beforeend', html);
             });
         }

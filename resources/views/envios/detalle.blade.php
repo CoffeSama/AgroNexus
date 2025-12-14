@@ -213,11 +213,11 @@
                 let cacheNotice = '';
                 if (fromCache) {
                     cacheNotice = `
-                    <div class="alert alert-warning mb-3">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Datos offline:</strong> Esta información puede no estar actualizada.
-                    </div>
-                `;
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Datos offline:</strong> Esta información puede no estar actualizada.
+                        </div>
+                    `;
                 }
 
                 if (particiones.length === 0) {
@@ -247,72 +247,72 @@
                     const colLeft = document.createElement('div');
                     colLeft.className = 'col-lg-6';
                     colLeft.innerHTML = `
-                    <h5 class="mb-3 d-flex align-items-center justify-content-between">
-                        Partición ${idx + 1}
-                        ${badgeFor(p.estado)}
-                    </h5>
+                        <h5 class="mb-3 d-flex align-items-center justify-content-between">
+                            Partición ${idx + 1}
+                            ${badgeFor(p.estado)}
+                        </h5>
 
-                    <div class="mb-3">
-                        <h6 class="font-weight-bold">Transportista</h6>
-                        <p class="mb-1">Nombre: ${(p.transportista?.nombre || '—')} ${(p.transportista?.apellido || '')}</p>
-                        <p class="mb-1">Teléfono: ${p.transportista?.telefono || '—'}</p>
-                        <p class="mb-0">CI: ${p.transportista?.ci || '—'}</p>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="font-weight-bold">Vehículo</h6>
-                        <p class="mb-0">Placa: ${p.vehiculo?.placa || '—'}</p>
-                    </div>
-
-                    <div class="mb-3">
-                        <h6 class="font-weight-bold">Transporte</h6>
-                        <p class="mb-1">Tipo: ${p.tipoTransporte?.nombre || '—'}</p>
-                        <p class="mb-0">Descripción: ${p.tipoTransporte?.descripcion || '—'}</p>
-                    </div>
-
-                    <div class="timeline-item recogida mb-3">
-                        <div class="mb-2">
-                            <i class="fas fa-circle text-success mr-1" style="font-size: 0.5rem;"></i>
-                            <strong>Recogida:</strong> ${p.recogidaEntrega?.fecha_recogida || '—'} – ${p.recogidaEntrega?.hora_recogida || '—'}
+                        <div class="mb-3">
+                            <h6 class="font-weight-bold">Transportista</h6>
+                            <p class="mb-1">Nombre: ${(p.transportista?.nombre || '—')} ${(p.transportista?.apellido || '')}</p>
+                            <p class="mb-1">Teléfono: ${p.transportista?.telefono || '—'}</p>
+                            <p class="mb-0">CI: ${p.transportista?.ci || '—'}</p>
                         </div>
-                        <div class="p-2 bg-light rounded">
-                            <strong>Origen:</strong> ${envio.nombre_origen || '—'}<br>
-                            ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
-                                <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
-                            `).join('') : '<div class="mt-1">Sin productos</div>'}
-                            <div class="mt-2 text-muted" style="font-size: 0.9rem;">
-                                ${p.recogidaEntrega?.instrucciones_recogida || 'Sin instrucciones'}
+
+                        <div class="mb-3">
+                            <h6 class="font-weight-bold">Vehículo</h6>
+                            <p class="mb-0">Placa: ${p.vehiculo?.placa || '—'}</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="font-weight-bold">Transporte</h6>
+                            <p class="mb-1">Tipo: ${p.tipoTransporte?.nombre || '—'}</p>
+                            <p class="mb-0">Descripción: ${p.tipoTransporte?.descripcion || '—'}</p>
+                        </div>
+
+                        <div class="timeline-item recogida mb-3">
+                            <div class="mb-2">
+                                <i class="fas fa-circle text-success mr-1" style="font-size: 0.5rem;"></i>
+                                <strong>Recogida:</strong> ${p.recogidaEntrega?.fecha_recogida || '—'} – ${p.recogidaEntrega?.hora_recogida || '—'}
+                            </div>
+                            <div class="p-2 bg-light rounded">
+                                <strong>Origen:</strong> ${envio.nombre_origen || '—'}<br>
+                                ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
+                                    <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
+                                `).join('') : '<div class="mt-1">Sin productos</div>'}
+                                <div class="mt-2 text-muted" style="font-size: 0.9rem;">
+                                    ${p.recogidaEntrega?.instrucciones_recogida || 'Sin instrucciones'}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="timeline-item entrega">
-                        <div class="mb-2">
-                            <i class="fas fa-circle text-danger mr-1" style="font-size: 0.5rem;"></i>
-                            <strong>Entrega:</strong> ${p.recogidaEntrega?.fecha_recogida || '—'} – ${p.recogidaEntrega?.hora_entrega || '—'}
-                        </div>
-                        <div class="p-2 bg-light rounded">
-                            <strong>Destino:</strong> ${envio.nombre_destino || '—'}<br>
-                            ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
-                                <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
-                            `).join('') : '<div class="mt-1">Sin productos</div>'}
-                            <div class="mt-2 text-muted" style="font-size: 0.9rem;">
-                                ${p.recogidaEntrega?.instrucciones_entrega || 'Sin instrucciones'}
+                        <div class="timeline-item entrega">
+                            <div class="mb-2">
+                                <i class="fas fa-circle text-danger mr-1" style="font-size: 0.5rem;"></i>
+                                <strong>Entrega:</strong> ${p.recogidaEntrega?.fecha_recogida || '—'} – ${p.recogidaEntrega?.hora_entrega || '—'}
+                            </div>
+                            <div class="p-2 bg-light rounded">
+                                <strong>Destino:</strong> ${envio.nombre_destino || '—'}<br>
+                                ${Array.isArray(p.cargas) && p.cargas.length ? p.cargas.map(c => `
+                                    <div class="mt-1">• ${c.tipo} - ${c.variedad} (${Number(c.cantidad || 0)} uds, ${Number(c.peso || 0).toFixed(1)} kg)</div>
+                                `).join('') : '<div class="mt-1">Sin productos</div>'}
+                                <div class="mt-2 text-muted" style="font-size: 0.9rem;">
+                                    ${p.recogidaEntrega?.instrucciones_entrega || 'Sin instrucciones'}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
                     const colRight = document.createElement('div');
                     colRight.className = 'col-lg-6';
                     const mapId = `map-${idx}`;
                     colRight.innerHTML = `
-                    <div id="${mapId}" style="height: 420px;" class="rounded border mb-3"></div>
-                    <div class="p-3 bg-light rounded border text-center">
-                        <h6 class="mb-2 font-weight-bold">Código de Acceso</h6>
-                        <p class="mb-0 h4 text-primary" style="font-family: monospace; letter-spacing: 3px;">${p.codigo_acceso || 'No asignado'}</p>
-                    </div>
-                `;
+                        <div id="${mapId}" style="height: 420px;" class="rounded border mb-3"></div>
+                        <div class="p-3 bg-light rounded border text-center">
+                            <h6 class="mb-2 font-weight-bold">Código de Acceso</h6>
+                            <p class="mb-0 h4 text-primary" style="font-family: monospace; letter-spacing: 3px;">${p.codigo_acceso || 'No asignado'}</p>
+                        </div>
+                    `;
 
                     row.appendChild(colLeft);
                     row.appendChild(colRight);
@@ -322,17 +322,32 @@
                         const alertSection = document.createElement('div');
                         alertSection.className = 'mt-3';
                         alertSection.innerHTML = `
-                        <div class="alert alert-success mb-0">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <strong>Recursos confirmados</strong><br>
-                            Esta partición ya tiene transportista y vehículo asignados.
-                        </div>
-                    `;
+                            <div class="alert alert-success mb-0">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <strong>Recursos confirmados</strong><br>
+                                Esta partición ya tiene transportista y vehículo asignados.
+                            </div>
+                        `;
                         body.appendChild(alertSection);
                     }
 
                     card.appendChild(body);
+                    card.appendChild(body);
                     wrapper.appendChild(card);
+
+                    // Show Rejection Reason if status is Cancelado or Rechazado
+                    if (['cancelado', 'rechazado'].includes(envio.estado?.toLowerCase())) {
+                        // Intentar varios campos posibles para el motivo
+                        const motivo = envio.motivo_rechazo || envio.motivo || envio.observaciones || envio.observaciones_solicitud || 'No se especificó un motivo para el rechazo.';
+                        
+                        const rejectionDiv = document.createElement('div');
+                        rejectionDiv.className = 'alert alert-danger mt-4';
+                        rejectionDiv.innerHTML = `
+                                <h5 class="alert-heading"><i class="fas fa-exclamation-circle mr-2"></i>Motivo del Rechazo</h5>
+                                <p class="mb-0">${motivo}</p>
+                            `;
+                        wrapper.appendChild(rejectionDiv);
+                    }
 
                     // Inicializar mapa
                     setTimeout(() => {
