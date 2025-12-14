@@ -42,7 +42,7 @@ class LoteController extends Controller
             ->whereNotNull('latitud')
             ->whereNotNull('longitud')
             ->get()
-            ->map(function($lote) {
+            ->map(function ($lote) {
                 return [
                     'id' => $lote->loteid,
                     'nombre' => $lote->nombre,
@@ -61,7 +61,7 @@ class LoteController extends Controller
 
         // Lotes sin coordenadas (para alertas)
         $lotesSinCoordenadas = Lote::with(['usuario'])
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('latitud')->orWhereNull('longitud');
             })
             ->limit(5)
@@ -129,18 +129,7 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
-            'imagen' => 'nullable|image',
         ]);
-
-        // GUARDAR IMAGEN LOCALMENTE
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-            $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('lotes', $filename, 'public');
-            $data['imagenurl'] = '/storage/' . $path;
-        }
-
-        unset($data['imagen']);
 
         Lote::create($data);
 
@@ -150,8 +139,8 @@ class LoteController extends Controller
     public function show(Lote $lote)
     {
         $lote->load([
-            'usuario', 
-            'cultivo', 
+            'usuario',
+            'cultivo',
             'estadoTipo',
             'historialEstados.estadoTipo',
             'historialEstados.usuario',
@@ -281,25 +270,7 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
-            'imagen' => 'nullable|image',
         ]);
-
-        // ¿Se subió una nueva imagen?
-        if ($request->hasFile('imagen')) {
-            // ELIMINAR IMAGEN ANTERIOR (si existe)
-            if ($lote->imagenurl) {
-                $oldPath = str_replace('/storage/', '', $lote->imagenurl);
-                Storage::disk('public')->delete($oldPath);
-            }
-
-            // Subir nueva imagen localmente
-            $file = $request->file('imagen');
-            $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('lotes', $filename, 'public');
-            $data['imagenurl'] = '/storage/' . $path;
-        }
-
-        unset($data['imagen']);
 
         $lote->update($data);
 
