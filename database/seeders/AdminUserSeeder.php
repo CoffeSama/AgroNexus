@@ -30,15 +30,5 @@ class AdminUserSeeder extends Seeder
         // Assign Spatie Role
         $admin->assignRole('Admin');
 
-        // Assign Legacy Role (via pivot table if necessary, but Spatie should handle permissions)
-        // Check if legacy relationship needs manual population?
-        // Usuario model has 'roles' via Spatie, but also 'rols' via legacy?
-        // The migration created 'usuariorol'. Let's populate it just in case.
-        $rolAdmin = \App\Models\Rol::where('nombre', 'Admin')->first();
-        if ($rolAdmin) {
-            \Illuminate\Support\Facades\DB::table('usuariorol')->updateOrInsert(
-                ['usuarioid' => $admin->usuarioid, 'rolid' => $rolAdmin->rolid]
-            );
-        }
     }
 }

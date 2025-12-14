@@ -26,26 +26,7 @@ return new class extends Migration {
             });
         }
 
-        // Tabla Rol (Legacy/Custom)
-        if (!Schema::hasTable('rol')) {
-            Schema::create('rol', function (Blueprint $table) {
-                $table->id('rolid');
-                $table->string('nombre');
-                $table->text('descripcion')->nullable();
-            });
-        }
 
-        // Tabla Pivote UsuarioRol
-        if (!Schema::hasTable('usuariorol')) {
-            Schema::create('usuariorol', function (Blueprint $table) {
-                $table->id('usuariorolid');
-                $table->unsignedBigInteger('usuarioid');
-                $table->unsignedBigInteger('rolid');
-
-                $table->foreign('usuarioid')->references('usuarioid')->on('usuario')->onDelete('cascade');
-                $table->foreign('rolid')->references('rolid')->on('rol')->onDelete('cascade');
-            });
-        }
     }
 
     public function down(): void

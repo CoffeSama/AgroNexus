@@ -14,16 +14,10 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Spatie Roles
-        $roles = ['Admin', 'Productor', 'Agronomo'];
+        $roles = ['Admin', 'Agricultor'];
 
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-
-            // 2. Create Legacy Roles (to match the 'rol' table expected by some models)
-            Rol::firstOrCreate([
-                'nombre' => $roleName,
-                'descripcion' => "Rol de sistema para {$roleName}"
-            ]);
         }
     }
 }
