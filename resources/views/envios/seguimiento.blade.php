@@ -366,28 +366,28 @@
 
                 section.style.display = 'block';
                 grid.innerHTML = pendientes.map(envio => `
-                <div class="col-md-4 mb-3">
-                    <div class="card card-outline card-warning envio-local">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-cloud-upload-alt mr-1"></i>
-                                Local #${envio.id}
-                                <span class="badge badge-local float-right">Pendiente</span>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-2">
-                                <i class="far fa-calendar mr-1"></i>
-                                ${new Date(envio.fecha).toLocaleDateString('es-BO')}
-                            </p>
-                            <p class="mb-1"><strong>Remitente:</strong> ${envio.datos?.envio?.nombre_remitente || 'N/A'}</p>
-                            <p class="mb-0 small text-muted">
-                                <i class="fas fa-info-circle"></i> Se sincronizará automáticamente
-                            </p>
+                    <div class="col-md-4 mb-3">
+                        <div class="card card-outline card-warning envio-local">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-cloud-upload-alt mr-1"></i>
+                                    Local #${envio.id}
+                                    <span class="badge badge-local float-right">Pendiente</span>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-2">
+                                    <i class="far fa-calendar mr-1"></i>
+                                    ${new Date(envio.fecha).toLocaleDateString('es-BO')}
+                                </p>
+                                <p class="mb-1"><strong>Remitente:</strong> ${envio.datos?.envio?.nombre_remitente || 'N/A'}</p>
+                                <p class="mb-0 small text-muted">
+                                    <i class="fas fa-info-circle"></i> Se sincronizará automáticamente
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
             }
 
             // ========================================
@@ -486,40 +486,43 @@
                 const urlDetalle = `{{ url('/envios') }}/${envio.id}`;
 
                 return `
-                <div class="col-xl-4 col-lg-6 mb-3">
-                    <div class="card card-outline card-primary envio-card" onclick="window.location.href='${urlDetalle}'">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <strong>#${envio.id}</strong>
-                                <span class="badge ${meta.badge} float-right">${meta.label}</span>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-3"><i class="far fa-calendar mr-1"></i>${fecha}</p>
+                    <div class="col-xl-4 col-lg-6 mb-3">
+                        <div class="card card-outline card-primary envio-card" onclick="window.location.href='${urlDetalle}'">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0" style="width: 100%;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong>#${envio.id}</strong>
+                                        ${envio.numero_solicitud ? `<span class="badge badge-light border ml-2">${envio.numero_solicitud}</span>` : ''}
+                                        <span class="badge ${meta.badge} ml-auto">${meta.label}</span>
+                                    </div>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3"><i class="far fa-calendar mr-1"></i>${fecha}</p>
 
-                            <div class="mb-3 pb-3 envio-route">
-                                <div class="mb-2">
-                                    <small class="text-muted text-uppercase">Recogida</small>
-                                    <div class="font-weight-bold text-truncate-2lines">${envio.direccion_origen || 'Sin origen'}</div>
+                                <div class="mb-3 pb-3 envio-route">
+                                    <div class="mb-2">
+                                        <small class="text-muted text-uppercase">Recogida</small>
+                                        <div class="font-weight-bold text-truncate-2lines">${envio.direccion_origen || 'Sin origen'}</div>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted text-uppercase">Entrega</small>
+                                        <div class="font-weight-bold text-truncate-2lines">${envio.direccion_destino || 'Sin destino'}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <small class="text-muted text-uppercase">Entrega</small>
-                                    <div class="font-weight-bold text-truncate-2lines">${envio.direccion_destino || 'Sin destino'}</div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted text-uppercase">Remitente</small>
+                                        <div class="font-weight-bold">${remitente}</div>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">
+                                        <i class="fas fa-eye mr-1"></i>Ver
+                                    </button>
                                 </div>
                             </div>
-
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted text-uppercase">Remitente</small>
-                                    <div class="font-weight-bold">${remitente}</div>
-                                </div>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">
-                                    <i class="fas fa-eye mr-1"></i>Ver
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
             }
 
             function normalizarEstado(estado) {
@@ -541,6 +544,7 @@
                 if (!termino) return true;
                 const texto = [
                     `#${envio.id}`,
+                    envio.numero_solicitud || '',
                     envio.direccion_origen || '',
                     envio.direccion_destino || '',
                     envio.nombre_remitente || '',

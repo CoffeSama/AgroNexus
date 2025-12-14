@@ -171,6 +171,11 @@
                         </div>
                         <div class="card-body">
                             <div class="form-group">
+                                <label>Nº de Solicitud</label>
+                                <input type="text" class="form-control" id="numero_solicitud" placeholder="Ej: SOL-001"
+                                    maxlength="50">
+                            </div>
+                            <div class="form-group">
                                 <label>Nombre Completo <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nombre_remitente" placeholder="Ej: Juan Pérez"
                                     required>
@@ -305,7 +310,7 @@
     <!-- Botones de navegación -->
     <div class="row mt-4">
         <div class="col-6">
-            <button type="button" class="btn btn-default" id="btnPrev" disabled>
+            <button type="button" class="btn btn-default" id="btnPrev" style="display: none;">
                 <i class="fas fa-arrow-left"></i> Anterior
             </button>
         </div>
@@ -1152,7 +1157,7 @@
 
             state.currentStep = step;
 
-            document.getElementById('btnPrev').disabled = step === 1;
+            document.getElementById('btnPrev').style.display = step === 1 ? 'none' : 'inline-block';
 
             if (step === 3) {
                 document.getElementById('btnNext').style.display = 'none';
@@ -1285,12 +1290,12 @@
                 });
 
                 const html = `
-                                                                                <div class="callout callout-info mb-2">
-                                                                                    <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
-                                                                                    <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
-                                                                                    <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
-                                                                                </div>
-                                                                            `;
+                                                                                            <div class="callout callout-info mb-2">
+                                                                                                <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
+                                                                                                <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
+                                                                                                <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
+                                                                                            </div>
+                                                                                        `;
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
@@ -1351,6 +1356,7 @@
                         nombre_remitente: document.getElementById('nombre_remitente').value,
                         telefono_remitente: document.getElementById('telefono_remitente').value,
                         email_remitente: document.getElementById('email_remitente').value,
+                        numero_solicitud: document.getElementById('numero_solicitud').value,
                         particiones: particiones
                     }
                 };
@@ -1393,6 +1399,7 @@
                         nombre_remitente: document.getElementById('nombre_remitente').value,
                         telefono_remitente: document.getElementById('telefono_remitente').value,
                         email_remitente: document.getElementById('email_remitente').value || null,
+                        numero_solicitud: document.getElementById('numero_solicitud').value || null,
                         id_direccion: direccionData.id_direccion,
                         particiones: particiones
                     };
