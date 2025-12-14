@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             AdminUserSeeder::class,
+            DemoDataSeeder::class, // Generates Lotes, Produccion, Sales
             // ClimaSeeder::class, // Uncomment if needed
         ]);
     }
