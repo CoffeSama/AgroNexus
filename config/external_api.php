@@ -12,6 +12,6 @@ return [
     |
     */
 
-    'orgtrack_url' => env('ORGTRACK_API_URL', 'http://192.168.56.1:8000'),
+    'orgtrack_url' => env('ORGTRACK_API_URL', 'https://orgtrack.dasalas.shop'),
 
 ];
