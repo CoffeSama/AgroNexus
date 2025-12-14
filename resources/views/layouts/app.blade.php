@@ -139,7 +139,11 @@
 
     // Obtener rol del usuario
     $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'sin rol') : 'invitado';
-    $isAdmin = $authUser && $authUser->hasRole('admin');
+    // Fix: Check for 'Admin' (capitalized) as stored in DB.
+    $isAdmin = $authUser && ($authUser->hasRole('Admin') || $authUser->hasRole('admin'));
+
+    // Fix: Lowercase for CSS class matching
+    $userRoleCss = strtolower($userRole);
 @endphp
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -201,7 +205,7 @@
                             <p>
                                 @auth
                                     {{ $userFullName }}
-                                    <small class="role-badge {{ $userRole }}">{{ ucfirst($userRole) }}</small>
+                                    <small class="role-badge {{ $userRoleCss }}">{{ ucfirst($userRole) }}</small>
                                 @else
                                     Invitado
                                 @endauth
@@ -243,7 +247,7 @@
                                 Invitado
                             @endauth
                         </a>
-                        <span class="role-badge {{ $userRole }}">{{ ucfirst($userRole) }}</span>
+                        <span class="role-badge {{ $userRoleCss }}">{{ ucfirst($userRole) }}</span>
                     </div>
                 </div>
 
