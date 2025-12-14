@@ -131,11 +131,9 @@
         $userFullName = $authUser->nombreusuario ?? 'Usuario';
     }
 
-    $userImagePath = $authUser && $authUser->imagenurl
+    $userImageUrl = $authUser && $authUser->imagenurl
         ? $authUser->imagenurl
-        : 'images/user.png';
-
-    $userImageUrl = asset($userImagePath);
+        : asset('images/user.png');
 
     // Obtener rol del usuario
     $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'sin rol') : 'invitado';
