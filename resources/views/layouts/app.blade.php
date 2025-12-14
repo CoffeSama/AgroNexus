@@ -213,7 +213,7 @@
                             </p>
                         </li>
                         <li class="user-footer">
-                            <a href="#" class="btn btn-default btn-flat">Perfil</a>
+                            <a href="{{ route('profile.show') }}" class="btn btn-default btn-flat">Perfil</a>
                             <form action="{{ route('logout') }}" method="POST" class="d-inline float-right">
                                 @csrf
                                 <button type="submit" class="btn btn-default btn-flat">Salir</button>

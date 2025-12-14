@@ -22,6 +22,7 @@ use App\Http\Controllers\Web\VentaController;
 use App\Http\Controllers\Web\GestionUsuariosController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\PedidoController;
+use App\Http\Controllers\Web\UserProfileController;
 
 // 🔹 nuevos controladores web de almacenamiento
 use App\Http\Controllers\Web\TipoAlmacenController;
@@ -64,6 +65,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // RUTAS PROTEGIDAS (REQUIEREN ESTAR LOGUEADO)
 
 Route::middleware('auth')->group(function () {
+
+    // Perfil de Usuario
+    Route::get('/perfil', [UserProfileController::class, 'show'])->name('profile.show');
+    Route::put('/perfil', [UserProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
