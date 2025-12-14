@@ -409,7 +409,8 @@
                                     <td>Fecha Siembra</td>
                                     <td>@if($lote->fechasiembra){{ \Carbon\Carbon::parse($lote->fechasiembra)->format('d/m/Y') }}
                                         <small class="text-muted">({{ $estadisticas['dias_desde_siembra'] }}
-                                    días)</small>@else<span class="text-muted">No registrada</span>@endif</td>
+                                    días)</small>@else<span class="text-muted">No registrada</span>@endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Ubicación</td>
@@ -423,111 +424,116 @@
                             </table>
                         </div>
                         <div class="col-md-6">
+                            @if($lote->imagenurl)
+                                <h5 class="mb-3"><i class="fas fa-image mr-2 text-success"></i>Imagen</h5>
+                                <div class="text-center mb-4">
+                                    <img src="{{ $lote->imagenurl }}" alt="Lote" class="img-fluid rounded shadow-sm"
+                                        style="max-height: 300px;">
+                                </div>
+                            @endif
                             <h5 class="mb-3"><i class="fas fa-chart-pie mr-2 text-success"></i>Resumen</h5>
-                            <div class="row">
-                                <div class="col-6 mb-3">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
-                                        <h4 class="mb-0">{{ $estadisticas['actividades_completadas'] }}</h4>
-                                        <small class="text-muted">Completadas</small>
-                                    </div>
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <i class="fas fa-clock text-warning fa-2x mb-2"></i>
-                                        <h4 class="mb-0">
-                                            {{ $estadisticas['total_actividades'] - $estadisticas['actividades_completadas'] }}
-                                        </h4>
-                                        <small class="text-muted">Pendientes</small>
-                                    </div>
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <i class="fas fa-flask text-info fa-2x mb-2"></i>
-                                        <h4 class="mb-0">{{ $estadisticas['total_insumos'] }}</h4>
-                                        <small class="text-muted">Aplicaciones</small>
-                                    </div>
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <i class="fas fa-leaf text-success fa-2x mb-2"></i>
-                                        <h4 class="mb-0">{{ number_format($estadisticas['produccion_total'], 0) }}</h4>
-                                        <small class="text-muted">Kg Producidos</small>
-                                    </div>
-                                </div>
+                            <div class="p-3 bg-light rounded text-center">
+                                <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                                <h4 class="mb-0">{{ $estadisticas['actividades_completadas'] }}</h4>
+                                <small class="text-muted">Completadas</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                                <h4 class="mb-0">
+                                    {{ $estadisticas['total_actividades'] - $estadisticas['actividades_completadas'] }}
+                                </h4>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <i class="fas fa-flask text-info fa-2x mb-2"></i>
+                                <h4 class="mb-0">{{ $estadisticas['total_insumos'] }}</h4>
+                                <small class="text-muted">Aplicaciones</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="p-3 bg-light rounded text-center">
+                                <i class="fas fa-leaf text-success fa-2x mb-2"></i>
+                                <h4 class="mb-0">{{ number_format($estadisticas['produccion_total'], 0) }}</h4>
+                                <small class="text-muted">Kg Producidos</small>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Trazabilidad -->
-                <div class="tab-pane fade" id="trazabilidad" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0"><i class="fas fa-history mr-2 text-success"></i>Historial Completo</h5>
-                        <span class="badge badge-secondary">{{ $trazabilidad->count() }} eventos</span>
-                    </div>
-
-                    @if($trazabilidad->count() > 0)
-                        <div class="timeline">
-                            @foreach($trazabilidad as $evento)
-                                <div class="timeline-item">
-                                    <div class="timeline-icon {{ $evento['color'] }}">
-                                        <i class="fas fa-{{ $evento['icono'] }}"></i>
-                                    </div>
-                                    <div class="timeline-content {{ $evento['color'] }}">
-                                        <div class="timeline-date">
-                                            <i class="fas fa-calendar-alt mr-1"></i>
-                                            {{ $evento['fecha'] instanceof \Carbon\Carbon ? $evento['fecha']->format('d/m/Y H:i') : \Carbon\Carbon::parse($evento['fecha'])->format('d/m/Y H:i') }}
-                                            @if(isset($evento['completada']))
-                                                <span
-                                                    class="badge badge-{{ $evento['completada'] ? 'success' : 'warning' }} ml-2">{{ $evento['completada'] ? 'Completada' : 'Pendiente' }}</span>
-                                            @endif
-                                        </div>
-                                        <div class="timeline-title">{{ $evento['titulo'] }}</div>
-                                        <p class="timeline-desc">{{ $evento['descripcion'] }}</p>
-                                        @if(isset($evento['usuario']) && $evento['usuario'])
-                                            <div class="timeline-user"><i class="fas fa-user mr-1"></i> {{ $evento['usuario'] }}</div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="empty-timeline">
-                            <i class="fas fa-history"></i>
-                            <h5>Sin historial registrado</h5>
-                            <p class="text-muted">Los eventos aparecerán cuando se registren siembras, insumos, actividades o
-                                cosechas.</p>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Mapa -->
-                <div class="tab-pane fade" id="mapa" role="tabpanel">
-                    @if($lote->latitud && $lote->longitud)
-                        <div id="map"></div>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded"><strong><i class="fas fa-map-pin mr-1"></i> Latitud:</strong>
-                                    {{ $lote->latitud }}</div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded"><strong><i class="fas fa-map-pin mr-1"></i> Longitud:</strong>
-                                    {{ $lote->longitud }}</div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="fas fa-map-marked-alt fa-4x text-muted mb-3"></i>
-                            <h5>Sin coordenadas</h5>
-                            <p class="text-muted">Este lote no tiene ubicación geográfica.</p>
-                            <a href="{{ route('lotes.edit', $lote) }}" class="btn btn-success"><i class="fas fa-edit mr-1"></i>
-                                Agregar</a>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
+
+        <!-- Trazabilidad -->
+        <div class="tab-pane fade" id="trazabilidad" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0"><i class="fas fa-history mr-2 text-success"></i>Historial Completo</h5>
+                <span class="badge badge-secondary">{{ $trazabilidad->count() }} eventos</span>
+            </div>
+
+            @if($trazabilidad->count() > 0)
+                <div class="timeline">
+                    @foreach($trazabilidad as $evento)
+                        <div class="timeline-item">
+                            <div class="timeline-icon {{ $evento['color'] }}">
+                                <i class="fas fa-{{ $evento['icono'] }}"></i>
+                            </div>
+                            <div class="timeline-content {{ $evento['color'] }}">
+                                <div class="timeline-date">
+                                    <i class="fas fa-calendar-alt mr-1"></i>
+                                    {{ $evento['fecha'] instanceof \Carbon\Carbon ? $evento['fecha']->format('d/m/Y H:i') : \Carbon\Carbon::parse($evento['fecha'])->format('d/m/Y H:i') }}
+                                    @if(isset($evento['completada']))
+                                        <span
+                                            class="badge badge-{{ $evento['completada'] ? 'success' : 'warning' }} ml-2">{{ $evento['completada'] ? 'Completada' : 'Pendiente' }}</span>
+                                    @endif
+                                </div>
+                                <div class="timeline-title">{{ $evento['titulo'] }}</div>
+                                <p class="timeline-desc">{{ $evento['descripcion'] }}</p>
+                                @if(isset($evento['usuario']) && $evento['usuario'])
+                                    <div class="timeline-user"><i class="fas fa-user mr-1"></i> {{ $evento['usuario'] }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-timeline">
+                    <i class="fas fa-history"></i>
+                    <h5>Sin historial registrado</h5>
+                    <p class="text-muted">Los eventos aparecerán cuando se registren siembras, insumos, actividades o
+                        cosechas.</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Mapa -->
+        <div class="tab-pane fade" id="mapa" role="tabpanel">
+            @if($lote->latitud && $lote->longitud)
+                <div id="map"></div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded"><strong><i class="fas fa-map-pin mr-1"></i> Latitud:</strong>
+                            {{ $lote->latitud }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded"><strong><i class="fas fa-map-pin mr-1"></i> Longitud:</strong>
+                            {{ $lote->longitud }}</div>
+                    </div>
+                </div>
+            @else
+                <div class="text-center py-5">
+                    <i class="fas fa-map-marked-alt fa-4x text-muted mb-3"></i>
+                    <h5>Sin coordenadas</h5>
+                    <p class="text-muted">Este lote no tiene ubicación geográfica.</p>
+                    <a href="{{ route('lotes.edit', $lote) }}" class="btn btn-success"><i class="fas fa-edit mr-1"></i>
+                        Agregar</a>
+                </div>
+            @endif
+        </div>
+    </div>
+    </div>
     </div>
 
     <!-- Acciones -->
@@ -569,7 +575,7 @@
                     if (sup > 0) L.circle([lat, lng], { color: '#2c5530', fillColor: '#28a745', fillOpacity: 0.3, radius: Math.sqrt(sup * 10000 / Math.PI) }).addTo(loteMap);
                     setTimeout(function () { loteMap.invalidateSize(); }, 100);
                 @endif
-        }
+            }
         });
     </script>
 @endpush

@@ -109,6 +109,20 @@
                         </div>
 
                         <div class="form-group">
+                            <label><i class="fas fa-image mr-1"></i> Imagen del Lote</label>
+                            @if($lote->imagenurl)
+                                <div class="mb-2">
+                                    <img src="{{ $lote->imagenurl }}" class="img-thumbnail" style="max-height: 150px;"
+                                        alt="Actual">
+                                </div>
+                            @endif
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="imagen" name="imagen" accept="image/*">
+                                <label class="custom-file-label" for="imagen">Cambiar imagen...</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label><i class="fas fa-calendar mr-1"></i> Fecha de Siembra</label>
                             <input type="date" name="fechasiembra" class="form-control"
                                 value="{{ $lote->fechasiembra ? \Carbon\Carbon::parse($lote->fechasiembra)->format('Y-m-d') : '' }}">

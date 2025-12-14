@@ -129,7 +129,29 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
+            'imagen' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        // SUPABASE UPLOAD
+        if ($request->hasFile('imagen')) {
+            try {
+                $file = $request->file('imagen');
+                $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                // Instanciar servicio (no inyección de dependencias para no romper constructor existente si no es necesario)
+                $supabase = new \App\Services\SupabaseStorage();
+                $response = $supabase->upload($filename, file_get_contents($file), $file->getMimeType());
+
+                if ($response->successful()) {
+                    $data['imagenurl'] = $supabase->getPublicUrl($filename);
+                }
+            } catch (\Exception $e) {
+                // Silently fail or log error, don't stop creation
+                \Illuminate\Support\Facades\Log::error('Supabase upload error: ' . $e->getMessage());
+            }
+        }
+
+        unset($data['imagen']);
 
         Lote::create($data);
 
@@ -270,7 +292,33 @@ class LoteController extends Controller
             'estadolotetipoid' => 'nullable|exists:estadolote_tipo,estadolotetipoid',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
+            'imagen' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('imagen')) {
+            try {
+                $supabase = new \App\Services\SupabaseStorage();
+
+                // 1. Eliminar anterior si existe y es de Supabase
+                if ($lote->imagenurl && strpos($lote->imagenurl, 'supabase') !== false) {
+                    $oldFilename = basename($lote->imagenurl);
+                    $supabase->delete($oldFilename);
+                }
+
+                // 2. Subir nueva
+                $file = $request->file('imagen');
+                $filename = 'lote_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $response = $supabase->upload($filename, file_get_contents($file), $file->getMimeType());
+
+                if ($response->successful()) {
+                    $data['imagenurl'] = $supabase->getPublicUrl($filename);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Supabase update error: ' . $e->getMessage());
+            }
+        }
+
+        unset($data['imagen']);
 
         $lote->update($data);
 

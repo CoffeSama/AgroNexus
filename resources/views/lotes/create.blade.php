@@ -107,6 +107,15 @@
                         </div>
 
                         <div class="form-group">
+                            <label><i class="fas fa-image mr-1"></i> Imagen del Lote</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="imagen" name="imagen" accept="image/*">
+                                <label class="custom-file-label" for="imagen">Seleccionar archivo...</label>
+                            </div>
+                            <small class="form-text text-muted">Formatos: JPG, PNG. Máx: 2MB.</small>
+                        </div>
+
+                        <div class="form-group">
                             <label><i class="fas fa-calendar mr-1"></i> Fecha de Siembra</label>
                             <input type="date" name="fechasiembra" class="form-control" value="{{ old('fechasiembra') }}">
                         </div>
@@ -117,7 +126,8 @@
                                 <option value="">-- Seleccione estado --</option>
                                 @foreach($estados as $e)
                                     <option value="{{ $e->estadolotetipoid }}" {{ $e->nombre == 'disponible' ? 'selected' : '' }}>
-                                        {{ ucfirst($e->nombre) }}</option>
+                                        {{ ucfirst($e->nombre) }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
