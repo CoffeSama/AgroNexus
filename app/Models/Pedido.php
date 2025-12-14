@@ -14,11 +14,9 @@ class Pedido extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'numero_solicitud',
         'nombre_planta',
-        'cultivoid',
         'cultivo_personalizado',
-        'unidadmedidaid',
-        'cantidad',
         'latitud',
         'longitud',
         'direccion_texto',
@@ -29,30 +27,18 @@ class Pedido extends Model
     ];
 
     protected $casts = [
-        'pedidoid'             => 'integer',
-        'cultivoid'            => 'integer',
-        'unidadmedidaid'       => 'integer',
-        'cantidad'             => 'float',
-        'latitud'              => 'float',
-        'longitud'             => 'float',
-        'fechapedido'          => 'datetime',
-        'fechaEntregaDeseada'  => 'date',
-    ];
-
-    protected $hidden = [
-        'cultivo',
-        'unidadMedida',
+        'pedidoid'            => 'integer',
+        'numero_solicitud'    => 'string',
+        'latitud'             => 'float',
+        'longitud'            => 'float',
+        'fechapedido'         => 'datetime',
+        'fechaEntregaDeseada' => 'date',
     ];
 
     /* ================= RELACIONES ================= */
 
-    public function cultivo()
+    public function detalles()
     {
-        return $this->belongsTo(Cultivo::class, 'cultivoid', 'cultivoid');
-    }
-
-    public function unidadMedida()
-    {
-        return $this->belongsTo(UnidadMedida::class, 'unidadmedidaid', 'unidadmedidaid');
+        return $this->hasMany(DetallePedido::class, 'pedidoid', 'pedidoid');
     }
 }

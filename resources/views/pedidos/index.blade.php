@@ -84,15 +84,18 @@
                     <table class="table table-hover table-striped m-0">
                         <thead class="bg-light">
                             <tr>
-                                <th style="width: 60px">#ID</th>
+                                <th style="width: 80px">#ID</th>
+                                <th style="width: 170px">
+                                    <i class="fas fa-hashtag mr-1"></i>Solicitud
+                                </th>
                                 <th>
                                     <i class="fas fa-seedling mr-1"></i>Planta
                                 </th>
-                                <th>
-                                    <i class="fas fa-leaf mr-1"></i>Cultivo
+                                <th style="width: 130px">
+                                    <i class="fas fa-list-ul mr-1"></i>Ítems
                                 </th>
-                                <th style="width: 150px">
-                                    <i class="fas fa-weight mr-1"></i>Cantidad
+                                <th style="width: 200px">
+                                    <i class="fas fa-weight mr-1"></i>Total (kg)
                                 </th>
                                 <th style="width: 180px">
                                     <i class="fas fa-info-circle mr-1"></i>Estado
@@ -107,39 +110,47 @@
                         </thead>
                         <tbody>
                             @forelse($pedidos as $pedido)
+                                @php
+                                    $itemsCount = $pedido->detalles?->count() ?? 0;
+                                    $totalKg = $pedido->detalles?->sum('cantidad') ?? 0;
+                                @endphp
                                 <tr>
                                     <td class="font-weight-bold">
                                         #{{ $pedido->pedidoid }}
                                     </td>
+
+                                    <td>
+                                        <span class="badge badge-dark p-2">
+                                            {{ $pedido->numero_solicitud }}
+                                        </span>
+                                    </td>
+
                                     <td>
                                         <span class="text-primary font-weight-bold">
                                             {{ $pedido->nombre_planta }}
                                         </span>
                                     </td>
+
                                     <td>
-                                        @if($pedido->cultivo)
-                                            <span class="badge badge-info">
-                                                {{ $pedido->cultivo->nombre }}
-                                            </span>
-                                        @else
-                                            <span class="badge badge-secondary">
-                                                {{ $pedido->cultivo_personalizado }}
-                                            </span>
-                                        @endif
+                                        <span class="badge badge-info">
+                                            {{ $itemsCount }} ítem(s)
+                                        </span>
                                     </td>
+
                                     <td>
-                                        <strong>{{ number_format($pedido->cantidad, 2) }}</strong>
-                                        <small class="text-muted">{{ $pedido->unidadMedida->nombre }}</small>
+                                        <strong>{{ number_format($totalKg, 2) }}</strong>
+                                        <small class="text-muted">kg</small>
                                     </td>
+
                                     <td>
                                         <form action="{{ route('pedidos.update', $pedido) }}" method="POST" class="d-inline-block w-100">
                                             @csrf
                                             @method('PUT')
 
-                                            <select name="estado" 
-                                                    class="form-control form-control-sm estado-select {{ 
-                                                        $pedido->estado === 'pendiente' ? 'bg-info' : 
-                                                        ($pedido->estado === 'confirmado' ? 'bg-success' : 
+                                            <select name="estado"
+                                                    class="form-control form-control-sm estado-select {{
+                                                        $pedido->estado === 'pendiente' ? 'bg-info' :
+                                                        ($pedido->estado === 'confirmado' ? 'bg-success' :
                                                         ($pedido->estado === 'en produccion' ? 'bg-warning' : 'bg-danger'))
                                                     }}"
                                                     style="color: white; font-weight: 500;"
@@ -153,26 +164,28 @@
                                             </select>
                                         </form>
                                     </td>
+
                                     <td>
                                         <small class="text-muted">
                                             <i class="far fa-calendar-alt mr-1"></i>
                                             {{ \Carbon\Carbon::parse($pedido->fechapedido)->format('d/m/Y') }}
                                         </small>
                                     </td>
+
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('pedidos.show', $pedido) }}" 
+                                            <a href="{{ route('pedidos.show', $pedido) }}"
                                                class="btn btn-info"
                                                title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <form action="{{ route('pedidos.destroy', $pedido) }}" 
-                                                  method="POST" 
+                                            <form action="{{ route('pedidos.destroy', $pedido) }}"
+                                                  method="POST"
                                                   class="d-inline"
                                                   onsubmit="return confirm('¿Está seguro de eliminar este pedido?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" 
+                                                <button type="submit"
                                                         class="btn btn-danger"
                                                         title="Eliminar">
                                                     <i class="fas fa-trash"></i>
@@ -183,7 +196,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <div class="text-muted">
                                             <i class="fas fa-inbox fa-3x mb-3"></i>
                                             <p class="h5">No hay pedidos registrados</p>
@@ -219,7 +232,7 @@
         cursor: pointer;
         transition: all 0.3s ease;
     }
-    
+
     .estado-select:hover {
         opacity: 0.9;
         transform: translateY(-1px);
@@ -260,7 +273,6 @@
 
 @push('scripts')
 <script>
-    // Auto-hide success messages
     setTimeout(function() {
         $('.alert-success').fadeOut('slow');
     }, 3000);
