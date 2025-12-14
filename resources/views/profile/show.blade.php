@@ -35,7 +35,8 @@
                                     </div>
 
                                     <h3 class="profile-username font-weight-bold text-dark mb-1">{{ $user->nombre }}
-                                        {{ $user->apellido }}</h3>
+                                        {{ $user->apellido }}
+                                    </h3>
                                     <p class="text-muted mb-2">{{ '@' . $user->nombreusuario }}</p>
                                     <span class="badge badge-pill badge-success px-3 py-1 mb-4" style="font-size: 0.9rem;">
                                         <i class="fas fa-user-shield mr-1"></i>
@@ -67,17 +68,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="d-flex align-items-center p-3 bg-white rounded shadow-sm">
-                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mr-3"
-                                                style="width: 40px; height: 40px;">
-                                                <i class="fas fa-calendar-check text-success"></i>
-                                            </div>
-                                            <div>
-                                                <small class="text-muted d-block">Miembro Desde</small>
-                                                <span
-                                                    class="font-weight-bold text-dark">{{ $user->created_at ? $user->created_at->format('d M, Y') : '-' }}</span>
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
