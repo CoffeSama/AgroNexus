@@ -132,15 +132,7 @@
 
     <!-- Info boxes -->
     <div class="row">
-        <div class="col-12 col-sm-6 col-md-2">
-            <div class="info-box filter-card" data-filter="todos">
-                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-clipboard-list"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Todos</span>
-                    <span class="info-box-number" id="statTodos">0</span>
-                </div>
-            </div>
-        </div>
+
         <div class="col-12 col-sm-6 col-md-2">
             <div class="info-box filter-card" data-filter="pendientes">
                 <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-clock"></i></span>
@@ -183,6 +175,15 @@
                 <div class="info-box-content">
                     <span class="info-box-text">Completados</span>
                     <span class="info-box-number" id="statCompletados">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2">
+            <div class="info-box filter-card" data-filter="rechazados">
+                <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-ban"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Rechazados</span>
+                    <span class="info-box-number" id="statRechazados">0</span>
                 </div>
             </div>
         </div>
@@ -233,7 +234,7 @@
             let conectado = true;
             let envios = [];
             let enviosLocales = [];
-            let activeFilter = 'todos';
+            let activeFilter = 'pendientes';
             let searchTerm = '';
 
             const grid = document.getElementById('envioGrid');
@@ -246,7 +247,7 @@
                 curso: (estado) => ['en curso'].includes(estado),
                 parcial: (estado) => ['parcialmente entregado'].includes(estado),
                 completados: (estado) => ['entregado', 'finalizado', 'completado'].includes(estado),
-                todos: () => true
+                rechazados: (estado) => ['cancelado', 'rechazado'].includes(estado)
             };
 
             const STATUS_META = {
@@ -259,6 +260,8 @@
                 'entregado': { label: 'Completado', badge: 'badge-success' },
                 'finalizado': { label: 'Completado', badge: 'badge-success' },
                 'completado': { label: 'Completado', badge: 'badge-success' },
+                'cancelado': { label: 'Rechazado', badge: 'badge-danger' },
+                'rechazado': { label: 'Rechazado', badge: 'badge-danger' }
             };
 
             // Event listeners
@@ -366,28 +369,28 @@
 
                 section.style.display = 'block';
                 grid.innerHTML = pendientes.map(envio => `
-                <div class="col-md-4 mb-3">
-                    <div class="card card-outline card-warning envio-local">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-cloud-upload-alt mr-1"></i>
-                                Local #${envio.id}
-                                <span class="badge badge-local float-right">Pendiente</span>
-                            </h5>
+                        <div class="col-md-4 mb-3">
+                            <div class="card card-outline card-warning envio-local">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-cloud-upload-alt mr-1"></i>
+                                        Local #${envio.id}
+                                        <span class="badge badge-local float-right">Pendiente</span>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted mb-2">
+                                        <i class="far fa-calendar mr-1"></i>
+                                        ${new Date(envio.fecha).toLocaleDateString('es-BO')}
+                                    </p>
+                                    <p class="mb-1"><strong>Remitente:</strong> ${envio.datos?.envio?.nombre_remitente || 'N/A'}</p>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-info-circle"></i> Se sincronizará automáticamente
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-2">
-                                <i class="far fa-calendar mr-1"></i>
-                                ${new Date(envio.fecha).toLocaleDateString('es-BO')}
-                            </p>
-                            <p class="mb-1"><strong>Remitente:</strong> ${envio.datos?.envio?.nombre_remitente || 'N/A'}</p>
-                            <p class="mb-0 small text-muted">
-                                <i class="fas fa-info-circle"></i> Se sincronizará automáticamente
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+                    `).join('');
             }
 
             // ========================================
@@ -441,7 +444,7 @@
             }
 
             function renderSummary() {
-                const counts = { pendientes: 0, asignados: 0, curso: 0, parcial: 0, completados: 0, todos: envios.length };
+                const counts = { pendientes: 0, asignados: 0, curso: 0, parcial: 0, completados: 0, rechazados: 0 };
 
                 envios.forEach(envio => {
                     const estado = normalizarEstado(envio.estado);
@@ -450,9 +453,10 @@
                     if (STATUS_GROUPS.curso(estado)) counts.curso++;
                     if (STATUS_GROUPS.parcial(estado)) counts.parcial++;
                     if (STATUS_GROUPS.completados(estado)) counts.completados++;
+                    if (STATUS_GROUPS.rechazados(estado)) counts.rechazados++;
                 });
 
-                document.getElementById('statTodos').textContent = counts.todos;
+                document.getElementById('statRechazados').textContent = counts.rechazados;
                 document.getElementById('statPendientes').textContent = counts.pendientes;
                 document.getElementById('statAsignados').textContent = counts.asignados;
                 document.getElementById('statCurso').textContent = counts.curso;
@@ -486,40 +490,43 @@
                 const urlDetalle = `{{ url('/envios') }}/${envio.id}`;
 
                 return `
-                <div class="col-xl-4 col-lg-6 mb-3">
-                    <div class="card card-outline card-primary envio-card" onclick="window.location.href='${urlDetalle}'">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <strong>#${envio.id}</strong>
-                                <span class="badge ${meta.badge} float-right">${meta.label}</span>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted mb-3"><i class="far fa-calendar mr-1"></i>${fecha}</p>
-
-                            <div class="mb-3 pb-3 envio-route">
-                                <div class="mb-2">
-                                    <small class="text-muted text-uppercase">Recogida</small>
-                                    <div class="font-weight-bold text-truncate-2lines">${envio.direccion_origen || 'Sin origen'}</div>
+                        <div class="col-xl-4 col-lg-6 mb-3">
+                            <div class="card card-outline card-primary envio-card" onclick="window.location.href='${urlDetalle}'">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0" style="width: 100%;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong>#${envio.id}</strong>
+                                            ${envio.numero_solicitud ? `<span class="badge badge-light border ml-2">${envio.numero_solicitud}</span>` : ''}
+                                            <span class="badge ${meta.badge} ml-auto">${meta.label}</span>
+                                        </div>
+                                    </h5>
                                 </div>
-                                <div>
-                                    <small class="text-muted text-uppercase">Entrega</small>
-                                    <div class="font-weight-bold text-truncate-2lines">${envio.direccion_destino || 'Sin destino'}</div>
+                                <div class="card-body">
+                                    <p class="text-muted mb-3"><i class="far fa-calendar mr-1"></i>${fecha}</p>
+
+                                    <div class="mb-3 pb-3 envio-route">
+                                        <div class="mb-2">
+                                            <small class="text-muted text-uppercase">Recogida</small>
+                                            <div class="font-weight-bold text-truncate-2lines">${envio.direccion_origen || 'Sin origen'}</div>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted text-uppercase">Entrega</small>
+                                            <div class="font-weight-bold text-truncate-2lines">${envio.direccion_destino || 'Sin destino'}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <small class="text-muted text-uppercase">Remitente</small>
+                                            <div class="font-weight-bold">${remitente}</div>
+                                        </div>
+                                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">
+                                            <i class="fas fa-eye mr-1"></i>Ver
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted text-uppercase">Remitente</small>
-                                    <div class="font-weight-bold">${remitente}</div>
-                                </div>
-                                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">
-                                    <i class="fas fa-eye mr-1"></i>Ver
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
+                        </div>`;
             }
 
             function normalizarEstado(estado) {
@@ -541,6 +548,7 @@
                 if (!termino) return true;
                 const texto = [
                     `#${envio.id}`,
+                    envio.numero_solicitud || '',
                     envio.direccion_origen || '',
                     envio.direccion_destino || '',
                     envio.nombre_remitente || '',

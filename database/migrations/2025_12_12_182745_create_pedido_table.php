@@ -8,26 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ===================== TABLA: pedido =====================
         Schema::create('pedido', function (Blueprint $table) {
             $table->id('pedidoid');
 
-            // Datos del cliente externo
+            // Código / número de solicitud (código de pedido)
+            $table->string('numero_solicitud')->unique();
+
+            // Se mantiene
             $table->string('nombre_planta');
-
-            // Cultivo (opcional)
-            $table->foreignId('cultivoid')
-                ->nullable()
-                ->constrained('cultivo', 'cultivoid')
-                ->nullOnDelete();
-
-            // Cultivo libre si no existe en el sistema
-            $table->string('cultivo_personalizado')->nullable();
-
-            // Cantidad solicitada
-            $table->foreignId('unidadmedidaid')
-                ->constrained('unidadmedida', 'unidadmedidaid');
-
-            $table->decimal('cantidad', 12, 2);
 
             // Ubicación de entrega (mapa)
             $table->decimal('latitud', 10, 7);
@@ -49,10 +38,30 @@ return new class extends Migration
             // Observaciones
             $table->text('observaciones')->nullable();
         });
+
+        // ===================== TABLA: detallepedido =====================
+        Schema::create('detallepedido', function (Blueprint $table) {
+            $table->id('detallepedidoid');
+
+            // Relación con pedido (un pedido puede tener varios detalles)
+            $table->foreignId('pedidoid')
+                ->constrained('pedido', 'pedidoid')
+                ->cascadeOnDelete();
+
+            // Producto solicitado (manual)
+            $table->string('cultivo_personalizado');
+
+            // Cantidad solicitada (se sobreentiende en kilos)
+            $table->decimal('cantidad', 12, 2);
+
+            // Observaciones por ítem
+            $table->text('observaciones')->nullable();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('detallepedido');
         Schema::dropIfExists('pedido');
     }
 };
