@@ -174,6 +174,16 @@
 
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
+                                            <a href="{{ route('envios.mandar', [
+                                                'solicitud' => $pedido->numero_solicitud,
+                                                'lat' => $pedido->latitud,
+                                                'lng' => $pedido->longitud,
+                                                'direccion' => $pedido->direccion_texto ?? $pedido->nombre_planta
+                                            ]) }}"
+                                               class="btn btn-success"
+                                               title="Procesar Envío">
+                                                <i class="fas fa-truck"></i>
+                                            </a>
                                             <a href="{{ route('pedidos.show', $pedido) }}"
                                                class="btn btn-info"
                                                title="Ver detalle">

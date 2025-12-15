@@ -31,6 +31,13 @@
             cursor: not-allowed;
         }
 
+        .map-locked {
+            cursor: not-allowed !important;
+            opacity: 0.7;
+            pointer-events: none;
+            /* Bloqueo extra por si acaso */
+        }
+
         .equal-height-row {
             display: flex;
             flex-wrap: wrap;
@@ -173,34 +180,34 @@
                             <div class="form-group">
                                 <label>Nº de Solicitud</label>
                                 <input type="text" class="form-control" id="numero_solicitud" placeholder="Ej: SOL-001"
-                                    maxlength="50">
+                                    maxlength="50" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label>Nombre Completo <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nombre_remitente" placeholder="Ej: Juan Pérez"
-                                    required>
+                                    required autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label>Teléfono <span class="text-danger">*</span></label>
                                 <input type="tel" class="form-control" id="telefono_remitente" placeholder="Ej: 77123456"
-                                    required>
+                                    required autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label>Email <small class="text-muted">(opcional)</small></label>
                                 <input type="email" class="form-control" id="email_remitente"
-                                    placeholder="correo@example.com">
+                                    placeholder="correo@example.com" autocomplete="off">
                             </div>
                             <hr>
                             <div class="form-group">
                                 <label class="text-success"><i class="fas fa-map-marker-alt"></i> Origen</label>
                                 <input type="text" class="form-control readonly-input" id="txtNombreOrigen" readonly
-                                    placeholder="Marca el origen en el mapa...">
+                                    placeholder="Marca el origen en el mapa..." autocomplete="off">
                                 <small id="txtOrigen" class="form-text text-muted"></small>
                             </div>
                             <div class="form-group">
                                 <label class="text-danger"><i class="fas fa-map-marker-alt"></i> Destino</label>
                                 <input type="text" class="form-control readonly-input" id="txtNombreDestino" readonly
-                                    placeholder="Marca el destino en el mapa...">
+                                    placeholder="Marca el destino en el mapa..." autocomplete="off">
                                 <small id="txtDestino" class="form-text text-muted"></small>
                             </div>
                             <div class="callout callout-info">
@@ -327,7 +334,8 @@
     <!-- Template Partición -->
     <template id="tplParticion">
         <div class="card card-outline card-primary mb-3" data-index="{index}">
-            <div class="card-header">
+            <div class="card-header" style="cursor: pointer;"
+                onclick="if(!event.target.closest('.card-tools')) this.querySelector('[data-card-widget=\'collapse\']').click();">
                 <h3 class="card-title">
                     <i class="fas fa-truck"></i> Envío / Camión #<span class="num">1</span>
                 </h3>
@@ -721,6 +729,8 @@
             originCoords: null,
             destinationCoords: null,
             geoJSON: null,
+            mapLocked: false, // Nuevo estado de bloqueo
+            isOrderMode: false, // Nuevo flag robusto
             tiposTransporte: [],
 
             // Cache Catalogos
@@ -737,15 +747,96 @@
         // ========================================
         // INICIALIZACIÓN
         // ========================================
+
+        // DETECCIÓN TEMPRANA DE ORDER MODE (antes de cualquier cosa)
+        function detectOrderMode() {
+            const params = new URLSearchParams(window.location.search);
+            const solicitud = params.get('solicitud');
+            if (solicitud) {
+                state.isOrderMode = true;
+                state.mapLocked = true; // Bloquear desde el inicio
+                return {
+                    solicitud: solicitud,
+                    lat: parseFloat(params.get('lat')),
+                    lng: parseFloat(params.get('lng')),
+                    direccion: params.get('direccion')
+                };
+            }
+            return null;
+        }
+
+        // Guardar info del pedido antes de que se borre la URL
+        const orderParams = detectOrderMode();
+
         document.addEventListener('DOMContentLoaded', async () => {
             ToleranciaFallos.init();
             initMap();
+
+            // Aplicar Order Mode INMEDIATAMENTE después de crear el mapa
+            if (orderParams) {
+                applyOrderMode(orderParams);
+            }
+
             await loadTiposTransporte();
-            await loadCatalogos(); // Cargar catalogos
+            await loadCatalogos();
             addPartition();
             setupEventListeners();
             setMinDate();
         });
+
+        function applyOrderMode(params) {
+            const { solicitud, lat, lng, direccion } = params;
+
+            // Bloqueo visual del mapa
+            document.getElementById('map').classList.add('map-locked');
+
+            // Bloquear número de solicitud
+            const inputSolicitud = document.getElementById('numero_solicitud');
+            inputSolicitud.value = solicitud;
+            inputSolicitud.disabled = true;
+            inputSolicitud.classList.add('readonly-input');
+
+            // Bloquear input de destino (solo lectura)
+            const inputDestino = document.getElementById('txtNombreDestino');
+            inputDestino.disabled = true;
+            inputDestino.classList.add('readonly-input');
+
+            // Mostrar botón limpiar
+            const btnReset = document.getElementById('btnResetMap');
+            if (btnReset) btnReset.style.display = 'inline-block';
+
+            // Si hay coordenadas válidas, colocar el marcador de destino
+            if (!isNaN(lat) && !isNaN(lng)) {
+                // Limpiar marcador previo si existe
+                if (state.markers.destination) {
+                    state.map.removeLayer(state.markers.destination);
+                }
+
+                state.markers.destination = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        html: '<i class="fas fa-map-marker-alt" style="color: #dc3545; font-size: 32px;"></i>',
+                        className: 'custom-marker',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32]
+                    })
+                }).addTo(state.map);
+
+                state.destinationCoords = { lat, lng };
+
+                // Actualizar UI
+                inputDestino.value = direccion || `Ubicación (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                document.getElementById('txtDestino').textContent = `Coordenadas: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+                state.map.setView([lat, lng], 15);
+
+                // Limpiar la URL para evitar duplicados si se recarga
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // DESBLOQUEAR el mapa SOLO para que el usuario pueda poner el ORIGEN
+            state.mapLocked = false;
+            document.getElementById('map').classList.remove('map-locked');
+        }
 
         async function loadCatalogos() {
             try {
@@ -777,7 +868,7 @@
         // MAPA
         // ========================================
         function initMap() {
-            state.map = L.map('map').setView([-17.3935, -66.1570], 13);
+            state.map = L.map('map').setView([-17.7833, -63.1821], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(state.map);
@@ -785,6 +876,9 @@
         }
 
         async function onMapClick(e) {
+            // Si el mapa está bloqueado, no hacer nada
+            if (state.mapLocked) return;
+
             const { lat, lng } = e.latlng;
 
             if (!state.markers.origin) {
@@ -802,7 +896,18 @@
                 const address = await reverseGeocode(lat, lng);
                 document.getElementById('txtNombreOrigen').value = address;
 
+                // Si ya existe destino (ej: venido de pedidos), trazar ruta
+                if (state.markers.destination) {
+                    await drawRoute();
+                }
+
             } else if (!state.markers.destination) {
+                // SEGURIDAD EXTRA: Si estamos en Order Mode, PROHIBIDO poner destino manual
+                if (state.isOrderMode) {
+                    console.warn("Intento de cambiar destino bloqueado por Order Mode");
+                    return;
+                }
+
                 state.markers.destination = L.marker([lat, lng], {
                     icon: L.divIcon({
                         html: '<i class="fas fa-map-marker-alt" style="color: #dc3545; font-size: 32px;"></i>',
@@ -837,9 +942,18 @@
             const start = origin.getLatLng();
             const end = destination.getLatLng();
 
+            // Validación de Coordenadas para evitar 400 Bad Request
+            if (!start || !end || isNaN(start.lat) || isNaN(start.lng) || isNaN(end.lat) || isNaN(end.lng)) {
+                console.warn('Coordenadas inválidas para ruta:', start, end);
+                return;
+            }
+
             try {
                 const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${ORS_KEY}&start=${start.lng},${start.lat}&end=${end.lng},${end.lat}`;
                 const res = await fetch(url);
+
+                if (!res.ok) throw new Error(`ORS API Error: ${res.status}`);
+
                 const data = await res.json();
 
                 if (data.features && data.features.length > 0) {
@@ -852,6 +966,7 @@
                     state.geoJSON = JSON.stringify({ type: "FeatureCollection", features: [geoJSON] });
                 }
             } catch (e) {
+                console.error("Error trazando ruta:", e);
                 const line = [[start.lat, start.lng], [end.lat, end.lng]];
                 if (state.routeLayer) state.map.removeLayer(state.routeLayer);
                 state.routeLayer = L.polyline(line, { color: 'red', weight: 4, dashArray: '10, 10' }).addTo(state.map);
@@ -864,18 +979,26 @@
         }
 
         function resetMap() {
+            // Siempre limpiar origen y ruta
             if (state.markers.origin) state.map.removeLayer(state.markers.origin);
-            if (state.markers.destination) state.map.removeLayer(state.markers.destination);
             if (state.routeLayer) state.map.removeLayer(state.routeLayer);
-            state.markers = { origin: null, destination: null };
+
+            state.markers.origin = null;
             state.routeLayer = null;
             state.originCoords = null;
-            state.destinationCoords = null;
             state.geoJSON = null;
+
             document.getElementById('txtOrigen').textContent = '';
-            document.getElementById('txtDestino').textContent = '';
             document.getElementById('txtNombreOrigen').value = '';
-            document.getElementById('txtNombreDestino').value = '';
+
+            // Solo limpiar destino si NO estamos en Order Mode
+            if (!state.isOrderMode) {
+                if (state.markers.destination) state.map.removeLayer(state.markers.destination);
+                state.markers.destination = null;
+                state.destinationCoords = null;
+                document.getElementById('txtDestino').textContent = '';
+                document.getElementById('txtNombreDestino').value = '';
+            }
         }
 
         // ========================================
@@ -1290,12 +1413,12 @@
                 });
 
                 const html = `
-                                                                                                <div class="callout callout-info mb-2">
-                                                                                                    <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
-                                                                                                    <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
-                                                                                                    <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
-                                                                                                </div>
-                                                                                            `;
+                                                                                                                                                                        <div class="callout callout-info mb-2">
+                                                                                                                                                                            <h5>Envío #${idx + 1}: ${transporteNombre}</h5>
+                                                                                                                                                                            <p class="mb-1"><strong>Recogida:</strong> ${card.querySelector('.js-fecha-recogida').value} ${card.querySelector('.js-hora-recogida').value}</p>
+                                                                                                                                                                            <p class="mb-0"><strong>Cargas:</strong> ${cargas.join(', ') || 'Sin cargas aun'}</p>
+                                                                                                                                                                        </div>
+                                                                                                                                                                    `;
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
